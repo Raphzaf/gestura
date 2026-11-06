@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gestura"
+version = "0.1.0"
+description = "Hands-free desktop control with real-time hand and head tracking."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "Gestura contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Environment :: X11 Applications :: Qt",
+    "Topic :: Adaptive Technologies",
+]
+# Exact pins live in requirements.txt (tested set). These are the compatible ranges.
+dependencies = [
+    "mediapipe>=1.2,<2",
+    "opencv-contrib-python>=4.10",
+    "numpy>=2.0,<3",
+    "PySide6-Essentials>=6.7,<7",
+    "PyAutoGUI>=0.9.54",
+    "pydantic>=2.6,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pyinstaller>=6"]
+
+[project.scripts]
+gestura = "gestura.app.main:main"
+
+[tool.setuptools.packages.find]
+include = ["gestura*"]
+
+[tool.setuptools.package-data]
+gestura = ["assets/**/*", "config/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

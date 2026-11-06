@@ -1,0 +1,10 @@
+# Tested dependency set (Windows 10/11 x64, Python 3.12; Python 3.11 also supported).
+# MediaPipe already depends on opencv-contrib-python. Do NOT also install
+# opencv-python: both packages provide the `cv2` module and conflict.
+mediapipe==1.2.2
+opencv-contrib-python==5.0.0.93
+numpy==2.5.4; python_version >= "3.12"
+numpy==2.4.6; python_version < "3.12"
+PySide6-Essentials==6.12.0
+PyAutoGUI==0.9.54
+pydantic==2.14.3

@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "camera": {
+    "index": 0,
+    "width": 640,
+    "height": 480,
+    "fps": 30,
+    "mirror": true,
+    "backend": "auto"
+  },
+  "tracking": {
+    "hands_enabled": true,
+    "face_enabled": true,
+    "num_hands": 2,
+    "dominant_hand": "right",
+    "min_hand_detection_confidence": 0.6,
+    "min_hand_presence_confidence": 0.5,
+    "min_tracking_confidence": 0.5,
+    "min_face_detection_confidence": 0.5,
+    "parallel_inference": true
+  },
+  "cursor": {
+    "anchor": "index_tip",
+    "region_left": 0.18,
+    "region_right": 0.82,
+    "region_top": 0.12,
+    "region_bottom": 0.7,
+    "speed": 1.0,
+    "smoothing_min_cutoff": 1.0,
+    "smoothing_beta": 5.0,
+    "dead_zone_px": 2,
+    "freeze_on_pinch": true,
+    "freeze_ratio": 0.4,
+    "post_click_freeze_ms": 150
+  },
+  "hand": {
+    "pose_min_frames": 3,
+    "pinch_on_ratio": 0.25,
+    "pinch_off_ratio": 0.38,
+    "pinch_separation": 1.4,
+    "pinch_min_frames": 2,
+    "click_cooldown_ms": 120,
+    "double_click_window_ms": 450,
+    "right_click_cooldown_ms": 600,
+    "palm_hold_ms": 1200,
+    "palm_still_speed": 0.35,
+    "pause_cooldown_ms": 2000,
+    "scroll_speed": 25.0,
+    "scroll_dead_zone": 0.004,
+    "scroll_invert": false,
+    "swipe_min_distance": 0.22,
+    "swipe_window_ms": 350,
+    "swipe_cooldown_ms": 1000,
+    "lost_reset_ms": 250
+  },
+  "head": {
+    "yaw_threshold_deg": 18.0,
+    "pitch_down_threshold_deg": 13.0,
+    "pitch_up_threshold_deg": 13.0,
+    "roll_threshold_deg": 20.0,
+    "min_duration_ms": 220,
+    "cooldown_ms": 900,
+    "rearm_ratio": 0.4,
+    "rearm_ms": 150,
+    "dominance_ratio": 1.5,
+    "smoothing": 0.5,
+    "invert_yaw": false,
+    "invert_pitch": false,
+    "neutral_yaw": 0.0,
+    "neutral_pitch": 0.0,
+    "neutral_roll": 0.0,
+    "calibrated": false
+  },
+  "safety": {
+    "start_in_test_mode": true,
+    "confirm_sensitive": true,
+    "confirm_window_ms": 2500,
+    "pyautogui_failsafe": true,
+    "global_hotkey": true
+  },
+  "keyboard": {
+    "layout": "azerty",
+    "scale": 1.0,
+    "opacity": 0.95,
+    "pos_x": -1,
+    "pos_y": -1
+  },
+  "startup": {
+    "auto_start_tracking": false,
+    "start_minimized": false,
+    "open_page": "dashboard"
+  },
+  "modes": {
+    "mouse": true,
+    "navigation": false,
+    "keyboard": false
+  },
+  "mappings": {
+    "hand": {
+      "hand.cursor": "mouse.move",
+      "hand.pinch": "mouse.left_click",
+      "hand.middle_pinch": "mouse.right_click",
+      "hand.scroll": "mouse.scroll",
+      "hand.swipe_left": "browser.prev_tab",
+      "hand.swipe_right": "browser.next_tab",
+      "hand.palm_hold": "app.toggle_pause"
+    },
+    "head": {
+      "head.turn_left": "browser.back",
+      "head.turn_right": "browser.forward",
+      "head.nod_down": "key.enter",
+      "head.tilt_up": "key.escape",
+      "head.roll_left": "none",
+      "head.roll_right": "none"
+    }
+  }
+}
