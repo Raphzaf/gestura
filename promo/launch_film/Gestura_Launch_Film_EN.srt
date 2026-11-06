@@ -1,0 +1,43 @@
+1
+00:00:01,300 --> 00:00:04,415
+What if you could control your computer, without touching it?
+
+2
+00:00:06,300 --> 00:00:12,588
+Meet Gestura. A hands-free desktop control system, powered by real-time computer vision.
+
+3
+00:00:12,900 --> 00:00:15,580
+Move your index finger to control the cursor.
+
+4
+00:00:15,780 --> 00:00:17,353
+Pinch your fingers to click.
+
+5
+00:00:17,553 --> 00:00:19,051
+Move your hand to scroll.
+
+6
+00:00:19,251 --> 00:00:23,675
+Simple, intuitive gestures replace traditional mouse interactions.
+
+7
+00:00:24,200 --> 00:00:26,885
+Head tracking adds another layer of control.
+
+8
+00:00:26,985 --> 00:00:32,064
+Turn your head to navigate between pages, and use simple movements to trigger actions.
+
+9
+00:00:33,000 --> 00:00:39,644
+And when you need to type, Gestura brings up a virtual keyboard that you can control entirely through gestures.
+
+10
+00:00:40,800 --> 00:00:45,592
+One webcam. Real-time tracking. Complete hands-free interaction.
+
+11
+00:00:45,900 --> 00:00:49,463
+Gestura. Control your computer, without touching it.

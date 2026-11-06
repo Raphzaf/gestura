@@ -1,0 +1,77 @@
+{
+ "s1": {
+  "start": 1.3,
+  "end": 4.165,
+  "text": "What if you could control your computer, without touching it?"
+ },
+ "s2a": {
+  "start": 6.3,
+  "end": 7.331,
+  "text": "Meet Gestura."
+ },
+ "s2b": {
+  "start": 7.681,
+  "end": 12.338,
+  "text": "A hands-free desktop control system, powered by real-time computer vision."
+ },
+ "s3a": {
+  "start": 12.9,
+  "end": 15.33,
+  "text": "Move your index finger to control the cursor."
+ },
+ "s3b": {
+  "start": 15.78,
+  "end": 17.103,
+  "text": "Pinch your fingers to click."
+ },
+ "s3c": {
+  "start": 17.553,
+  "end": 18.801,
+  "text": "Move your hand to scroll."
+ },
+ "s3d": {
+  "start": 19.251,
+  "end": 23.425,
+  "text": "Simple, intuitive gestures replace traditional mouse interactions."
+ },
+ "s4a": {
+  "start": 24.2,
+  "end": 26.635,
+  "text": "Head tracking adds another layer of control."
+ },
+ "s4b": {
+  "start": 26.985,
+  "end": 31.814,
+  "text": "Turn your head to navigate between pages, and use simple movements to trigger actions."
+ },
+ "s5": {
+  "start": 33.0,
+  "end": 39.394,
+  "text": "And when you need to type, Gestura brings up a virtual keyboard that you can control entirely through gestures."
+ },
+ "s6a": {
+  "start": 40.8,
+  "end": 41.74,
+  "text": "One webcam."
+ },
+ "s6b": {
+  "start": 42.04,
+  "end": 43.329,
+  "text": "Real-time tracking."
+ },
+ "s6c": {
+  "start": 43.629,
+  "end": 45.342,
+  "text": "Complete hands-free interaction."
+ },
+ "s7a": {
+  "start": 45.9,
+  "end": 46.666,
+  "text": "Gestura."
+ },
+ "s7b": {
+  "start": 46.966,
+  "end": 49.213,
+  "text": "Control your computer, without touching it."
+ }
+}

@@ -1,0 +1,55 @@
+name: Release
+
+# Push a tag such as v0.1.0 to publish a GitHub Release with the Windows build:
+#   git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt pyinstaller==6.22.3 && pip install -e . --no-deps
+      - name: Tests
+        run: python -m pytest -q
+      - name: Build Gestura.exe
+        run: pyinstaller --noconfirm gestura.spec
+      - name: Frozen app smoke test
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\Gestura\Gestura.exe -ArgumentList "--config-dir","$env:RUNNER_TEMP\gcfg","--smoke-test","4" -PassThru -Wait
+          "exit code: $($p.ExitCode)"
+          if ($p.ExitCode -gt 1) { exit 1 }  # 1 = no webcam on the runner (expected)
+      - name: Zip portable build
+        shell: pwsh
+        run: Compress-Archive -Path dist\Gestura -DestinationPath Gestura-windows-x64.zip
+      - name: Build installer (Inno Setup)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc installer\gestura.iss
+          Copy-Item installer\Output\Gestura-Setup-*.exe .
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Gestura ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            **Windows 10/11 (64-bit).** Download `Gestura-Setup-*.exe` (installer) or
+            `Gestura-windows-x64.zip` (portable: unzip, then run `Gestura\Gestura.exe`).
+            See the README for installation and first steps.
+          files: |
+            Gestura-windows-x64.zip
+            Gestura-Setup-*.exe

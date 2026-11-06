@@ -1,0 +1,8 @@
+# generated / downloaded media (regenerate with the steps in README.md)
+work/*
+!work/cues.json
+dl_*/
+out/
+tts_env/
+*.mp4
+*.wav
