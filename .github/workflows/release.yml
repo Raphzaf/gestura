@@ -1,11 +1,17 @@
 name: Release
 
-# Push a tag such as v0.1.0 to publish a GitHub Release with the Windows build:
+# Publish a GitHub Release with the Windows build, either by pushing a tag
 #   git tag v0.1.0 && git push origin v0.1.0
+# or from GitHub: Actions > Release > Run workflow (enter the version; the tag is created).
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to create, e.g. v0.1.1"
+        required: true
+        default: "v0.1.0"
 
 permissions:
   contents: write
@@ -43,8 +49,9 @@ jobs:
           Copy-Item installer\Output\Gestura-Setup-*.exe .
       - uses: softprops/action-gh-release@v2
         with:
-          name: Gestura ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
+          name: Gestura ${{ inputs.version || github.ref_name }}
+          tag_name: ${{ inputs.version || github.ref_name }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           body: |
             **Windows 10/11 (64-bit).** Download `Gestura-Setup-*.exe` (installer) or

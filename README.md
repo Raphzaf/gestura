@@ -108,8 +108,10 @@ Useful options: `--start` (start tracking immediately), `--page studio`,
 `--source <camera index | video file | image folder>`, `--live` / `--test-mode`.
 Build the `.exe` yourself with `.\scripts\build_windows.ps1`.
 
-**Publishing a new version** (maintainers): push a version tag; the Release
-workflow builds `Gestura.exe` and the installer on Windows and publishes them:
+**Publishing a new version** (maintainers): on GitHub open **Actions → Release →
+Run workflow**, enter the new version (e.g. `v0.1.1`) and run it. The workflow tests
+and builds `Gestura.exe` and the installer on Windows, then publishes the Release.
+Pushing a tag does the same:
 
 ```bash
 git tag v0.1.1 && git push origin v0.1.1
