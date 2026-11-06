@@ -4,7 +4,9 @@
 ; Output: installer\Output\Gestura-Setup-<version>.exe  (per-user install, no admin rights)
 
 #define AppName "Gestura"
-#define AppVersion "0.1.0"
+#ifndef AppVersion
+  #define AppVersion "0.1.0"
+#endif
 #define AppExe "Gestura.exe"
 
 [Setup]
