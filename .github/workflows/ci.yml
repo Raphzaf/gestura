@@ -57,7 +57,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt pyinstaller==6.22.3
       - run: pyinstaller --noconfirm gestura.spec
-      - name: Frozen app smoke test (no camera: tracking engine on test images is not available here)
+      - name: "Frozen app smoke test (no webcam on runners, so 0 frames is expected)"
         shell: pwsh
         run: |
           $p = Start-Process -FilePath dist\Gestura\Gestura.exe -ArgumentList "--config-dir","$env:RUNNER_TEMP\gcfg","--smoke-test","4" -PassThru -Wait
