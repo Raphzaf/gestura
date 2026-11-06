@@ -22,6 +22,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     mode.add_argument("--live", dest="test_mode", action="store_false",
                       help="start with real control enabled")
     p.add_argument("--start", action="store_true", help="start tracking immediately")
+    p.add_argument("--minimized", action="store_true", help="start minimized (used by launch at login)")
     p.add_argument("--page", choices=["dashboard", "studio", "keyboard", "settings"], help="page to open")
     p.add_argument("--config-dir", help="use this folder for settings and logs")
     p.add_argument("--smoke-test", type=float, metavar="SECONDS",
@@ -50,10 +51,12 @@ def main(argv: list[str] | None = None) -> int:
     window = build_main_window(app)
     if args.page:
         window.show_page(args.page)
-    if app.settings.startup.start_minimized and not args.smoke_test:
+    if (args.minimized or app.settings.startup.start_minimized) and not args.smoke_test:
         window.showMinimized()
     else:
         window.show()
+    if window.keyboard_window.isVisible():
+        window.keyboard_window.raise_()
 
     if args.start or args.smoke_test or app.settings.startup.auto_start_tracking:
         app.start()
@@ -74,8 +77,11 @@ def main(argv: list[str] | None = None) -> int:
 
         def finish() -> None:
             if args.screenshot:
-                Path(args.screenshot).parent.mkdir(parents=True, exist_ok=True)
-                window.grab().save(args.screenshot)
+                shot = Path(args.screenshot)
+                shot.parent.mkdir(parents=True, exist_ok=True)
+                window.grab().save(str(shot))
+                screen = qt.primaryScreen().grabWindow(0)  # whole desktop: keyboard, overlay
+                screen.save(str(shot.with_name(shot.stem + "_screen" + shot.suffix)))
             frames = app.tracking.worker.frames_processed if app.tracking.worker else 0
             print(json.dumps({"frames": frames, "last": stats, "gestures": gestures[-20:],
                               "status": status, "backend_error": app.backend_error}, indent=1))

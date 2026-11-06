@@ -116,7 +116,13 @@ class KeyboardSettings(_Section):
     pos_y: int = Field(-1, ge=-1, le=20000, title="Position Y (-1 = auto)")
 
 
+class InterfaceSettings(_Section):
+    show_overlay: bool = Field(True, title="Show gesture feedback overlay")
+    overlay_position: Literal["top", "bottom"] = Field("top", title="Overlay position")
+
+
 class StartupSettings(_Section):
+    launch_at_login: bool = Field(False, title="Launch Gestura when I sign in (Windows)")
     auto_start_tracking: bool = Field(False, title="Start camera when Gestura opens")
     start_minimized: bool = Field(False, title="Start minimized")
     open_page: Literal["dashboard", "studio"] = Field("dashboard", title="First page")
@@ -198,6 +204,7 @@ class Settings(_Section):
     safety: SafetySettings = Field(default_factory=SafetySettings)
     keyboard: KeyboardSettings = Field(default_factory=KeyboardSettings)
     startup: StartupSettings = Field(default_factory=StartupSettings)
+    interface: InterfaceSettings = Field(default_factory=InterfaceSettings)
     modes: Modes = Field(default_factory=Modes)
     mappings: MappingSettings = Field(default_factory=MappingSettings)
 

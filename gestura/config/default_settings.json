@@ -86,9 +86,14 @@
     "pos_y": -1
   },
   "startup": {
+    "launch_at_login": false,
     "auto_start_tracking": false,
     "start_minimized": false,
     "open_page": "dashboard"
+  },
+  "interface": {
+    "show_overlay": true,
+    "overlay_position": "top"
   },
   "modes": {
     "mouse": true,

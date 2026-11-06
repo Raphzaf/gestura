@@ -22,7 +22,7 @@ from ..widgets.common import label
 
 SECTIONS = [
     ("camera", "Camera"), ("tracking", "Tracking"), ("cursor", "Cursor"), ("hand", "Hand gestures"),
-    ("head", "Head gestures"), ("safety", "Safety"), ("keyboard", "Keyboard"), ("startup", "Startup"),
+    ("head", "Head gestures"), ("safety", "Safety"), ("keyboard", "Keyboard"), ("interface", "Interface"), ("startup", "Startup"),
 ]
 HIDDEN = {
     "head": {"neutral_yaw", "neutral_pitch", "neutral_roll", "calibrated"},

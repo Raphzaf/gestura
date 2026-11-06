@@ -229,3 +229,61 @@ def test_win32_unicode_inputs_handle_accents_and_surrogates():
     assert events[0].ki.wScan == ord("é") and events[1].ki.dwFlags & win32_input.KEYEVENTF_KEYUP
     assert events[4].ki.wScan == 0xD83D and events[6].ki.wScan == 0xDE00
     assert win32_input.wheel_input(-120).mi.mouseData == 0xFFFFFF88
+
+
+class FakeWinreg:
+    HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, REG_SZ = 1, 2, 3, 4
+
+    def __init__(self):
+        self.values = {}
+
+    class _Key:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def OpenKey(self, *a):
+        return self._Key()
+
+    def CreateKeyEx(self, *a):
+        return self._Key()
+
+    def QueryValueEx(self, key, name):
+        if name not in self.values:
+            raise FileNotFoundError(name)
+        return self.values[name], self.REG_SZ
+
+    def SetValueEx(self, key, name, _r, _t, value):
+        self.values[name] = value
+
+    def DeleteValue(self, key, name):
+        if name not in self.values:
+            raise FileNotFoundError(name)
+        del self.values[name]
+
+
+def test_launch_at_login_registry_logic():
+    from gestura.services import startup_service as ss
+
+    reg = FakeWinreg()
+    assert not ss.is_enabled(reg)
+    assert ss.set_enabled(True, reg) and ss.is_enabled(reg)
+    assert "gestura" in reg.values["Gestura"].lower() and "--minimized" in reg.values["Gestura"]
+    assert ss.set_enabled(False, reg) and not ss.is_enabled(reg)
+    assert ss.set_enabled(False, reg)  # idempotent
+
+
+def test_config_service_recovers_from_corrupt_file(tmp_path):
+    from gestura.services.configuration_service import ConfigurationService
+
+    p = tmp_path / "settings.json"
+    p.write_text("{not json")
+    svc = ConfigurationService(p)
+    s = svc.load()
+    assert s.camera.index == 0 and svc.load_error
+    assert list(tmp_path.glob("settings.invalid-*.json"))
+    s.cursor.speed = 2.0
+    svc.save(s)
+    assert ConfigurationService(p).load().cursor.speed == 2.0

@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: System libraries (EGL for MediaPipe, xcb for Qt, Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgles2 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 \
+            libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0 libxcb-randr0 libxcb-render-util0 libxcb-image0 xvfb
+      - run: pip install -r requirements-dev.txt && pip install -e . --no-deps
+      - name: Unit + headless UI tests
+        run: python -m pytest -q
+      - name: Real OS input tests (X11 via Xvfb)
+        run: GESTURA_OS_TESTS=1 xvfb-run -a -s "-screen 0 1600x1000x24" python -m pytest -q tests/test_os_integration.py
+
+  test-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -r requirements-dev.txt && pip install -e . --no-deps
+      - name: Unit + headless UI tests
+        run: python -m pytest -q
+      - name: Real OS input tests (Windows desktop session)
+        # Hosted runners usually have an interactive desktop, but this is not guaranteed.
+        continue-on-error: true
+        env:
+          GESTURA_OS_TESTS: "1"
+        run: python -m pytest -q tests/test_os_integration.py
+
+  build-windows:
+    needs: test-windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt pyinstaller==6.22.3
+      - run: pyinstaller --noconfirm gestura.spec
+      - name: Frozen app smoke test (no camera: tracking engine on test images is not available here)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\Gestura\Gestura.exe -ArgumentList "--config-dir","$env:RUNNER_TEMP\gcfg","--smoke-test","4" -PassThru -Wait
+          "exit code: $($p.ExitCode)"
+          # exit 1 = no frames (expected: runners have no webcam); anything else is a crash
+          if ($p.ExitCode -gt 1) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gestura-windows-x64
+          path: dist/Gestura

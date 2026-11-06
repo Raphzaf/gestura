@@ -138,3 +138,37 @@ def test_keyboard_text_and_keys_reach_a_focused_widget(rig, qt):
     pump(qt, 0.4)
     assert edit.text() == "hell "
     edit.close()
+
+
+def test_virtual_keyboard_types_into_another_window_via_real_clicks(rig, qt):
+    """Milestone 5 acceptance path: real OS clicks on the floating keyboard type
+    into a *different* window that keeps focus."""
+    from PySide6.QtCore import QPoint
+    from PySide6.QtWidgets import QLineEdit, QPushButton
+
+    from gestura.controllers.virtual_keyboard_controller import VirtualKeyboardController
+    from gestura.ui.keyboard.keyboard_window import KeyboardWindow
+
+    be, eng, hands, safety, kb = rig
+    target = QLineEdit()
+    target.resize(500, 40)
+    target.move(40, 40)
+    target.show()
+    target.activateWindow()
+    target.setFocus()
+    kw = KeyboardWindow(VirtualKeyboardController(kb), "azerty")
+    kw.show_keyboard()
+    kw.move(40, 300)
+    pump(qt, 0.6)
+    keys = {b.text(): b for b in kw.findChildren(QPushButton)}
+    for ch in "salut":
+        b = keys[ch]
+        c = b.mapToGlobal(QPoint(b.width() // 2, b.height() // 2))
+        be.move_to(c.x(), c.y())
+        be.click()
+        pump(qt, 0.15)
+    pump(qt, 0.4)
+    assert kw.controller.preview == "salut"
+    assert target.text() == "salut", "keystrokes must reach the focused window, not the keyboard"
+    kw.close()
+    target.close()

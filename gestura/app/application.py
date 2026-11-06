@@ -125,6 +125,11 @@ class GesturaApp(QObject):
         return {**self.settings.mappings.hand, **self.settings.mappings.head}
 
     def update_settings(self, settings: Settings, save: bool = True) -> None:
+        if settings.startup.launch_at_login != self.settings.startup.launch_at_login:
+            from ..services import startup_service
+
+            if startup_service.is_supported() and not startup_service.set_enabled(settings.startup.launch_at_login):
+                self.notice.emit("Could not change the launch-at-login setting.")
         self.settings = settings
         self.mouse.settings = settings.cursor
         self.safety.confirm_sensitive = settings.safety.confirm_sensitive
