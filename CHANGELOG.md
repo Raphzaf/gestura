@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+* Gestura is now licensed under the **GNU GPL v3 or later**: `LICENSE` file at the
+  root, SPDX header in every source file (checked by a test and by
+  `scripts/license_headers.py --check`), license shown by the installer and shipped
+  with the executable. The unused GPL dependency `mouseinfo` is no longer bundled.
+
 ## 0.3.0
 
 * **Two-hand mouse** (Dashboard switch): the control hand moves the cursor, scrolls,

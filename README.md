@@ -214,6 +214,18 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * [Frictions d'utilisation (FR)](docs/friction_utilisation.md) — contraintes matérielles mesurées, fatigue, protocole de test
 * [Verdict commercial (FR)](docs/verdict_commercial_gestura.md) — faut-il commercialiser Gestura, et par quel canal
 
+## License
+
+Gestura is free and open-source software, licensed under the
+**[GNU General Public License v3.0 or later](LICENSE)** (`GPL-3.0-or-later`).
+You may use, study, share and modify it; if you distribute a modified version, it
+must stay under the same license with its source code available. Every source file
+carries the license header (`python scripts/license_headers.py --check`).
+
+Third-party components keep their own licenses, all compatible with GPL v3:
+MediaPipe and its models, OpenCV (Apache 2.0) · PySide6 / Qt (LGPL v3) ·
+NumPy, PyAutoGUI (BSD) · Pydantic (MIT) · Matplotlib (PSF-based).
+
 ## Privacy
 
 Camera frames are processed in memory on your computer and discarded. Gestura
@@ -291,6 +303,11 @@ caméra*. Fermez les autres applications qui utilisent la caméra (Teams, Zoom, 
 
 Option : Settings → Startup → *Launch Gestura when I sign in* pour lancer Gestura à
 l'ouverture de session. En cas de problème : [Troubleshooting](docs/TROUBLESHOOTING.md).
+
+**Licence** : Gestura est un logiciel libre et open source, sous licence
+[GNU GPL v3 ou ultérieure](LICENSE). Vous pouvez l'utiliser, l'étudier, le partager et
+le modifier ; une version modifiée redistribuée doit rester sous la même licence, avec
+son code source.
 
 **Désinstaller** : Paramètres Windows → Applications → Gestura → Désinstaller (ou
 supprimez le dossier pour la version portable). Les réglages sont dans `%APPDATA%\Gestura`.

@@ -1,3 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Gestura contributors
+#
+# This file is part of Gestura, free and open-source software: you can
+# redistribute it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version. Gestura is distributed
+# WITHOUT ANY WARRANTY; see the LICENSE file at the project root for details.
 """Frame sources: physical cameras, video files and still images.
 
 All sources return BGR uint8 frames. Video files and images exist so the whole

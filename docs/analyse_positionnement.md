@@ -43,7 +43,7 @@ et personnes qui peuvent bouger les bras mais ont du mal avec une souris.
 
 | Solution | Entrée | Matériel requis | Prix | Plateformes | Code ouvert |
 |---|---|---|---|---|---|
-| **Gestura** | Mains (+ tête, clavier virtuel) | Webcam standard | Gratuit | Windows (code Python, portable) | Code source disponible, **licence à définir** |
+| **Gestura** | Mains (+ tête, clavier virtuel) | Webcam standard | Gratuit | Windows (code Python, portable) | Oui (GPL v3) |
 | Talon Voice | Voix, bruits (« pop », « hiss »), oculométrie | Micro ; Tobii 4C/5 pour les yeux | Gratuit ; bêta « Talon+ » via Patreon (~25 $/mois selon une source secondaire) | Windows, macOS, Linux (X11) | Non (scripts utilisateur ouverts) |
 | Cephable | Tête, expressions du visage, voix | Webcam + micro existants | Formule Basic gratuite pour les particuliers ; formules payantes Plus/Pro (prix non affichés) | Windows, macOS (+ appli compagnon iOS/Android) | Non |
 | Tobii Eye Tracker 5 + Contrôle oculaire Windows | Regard | Barre Tobii (~285–500 $ chez les revendeurs) | Logiciel Windows gratuit, matériel payant | Windows | Non |
@@ -160,8 +160,8 @@ et personnes qui peuvent bouger les bras mais ont du mal avec une souris.
 3. **Windows uniquement** et application **non signée** (avertissement SmartScreen).
 4. **Pas encore validé par des utilisateurs réels** à grande échelle ; seuils réglés en
    grande partie sur photos et simulations.
-5. **Pas de licence open source définie** : le code est consultable, mais sans licence
-   il n'est juridiquement pas « open source ». C'est un argument à débloquer.
+5. ~~Pas de licence open source définie~~ — **réglé** : Gestura est sous GPL v3
+   (7 novembre 2026).
 6. **Dépendance à l'éclairage et au cadrage** de la webcam, comme toutes les
    solutions à caméra.
 

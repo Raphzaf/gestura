@@ -40,9 +40,8 @@ uniquement si l'activité B2B décolle.
 ## 2. Point de départ : ce que permet le produit aujourd'hui
 
 - **Windows uniquement.** Pas de version macOS.
-- **Pas de licence open source définie.** Le code est consultable sur GitHub, mais sans
-  licence il n'est ni réutilisable ni « open source » au sens juridique. Le choix de
-  licence conditionne les trois modèles (section 7).
+- **Licence : GPL v3 ou ultérieure** (fichier `LICENSE` et en-têtes ajoutés le
+  7 novembre 2026, voir section 7).
 - **Application non signée** : avertissement SmartScreen au téléchargement.
 - **Public servi :** personnes qui peuvent bouger les bras (mains occupées, sales,
   douleurs à la souris, motricité fine réduite). **Pas encore** les personnes sans usage

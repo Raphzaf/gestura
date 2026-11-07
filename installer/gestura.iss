@@ -19,6 +19,7 @@ DefaultGroupName={#AppName}
 PrivilegesRequired=lowest
 OutputBaseFilename=Gestura-Setup-{#AppVersion}
 SetupIconFile=..\gestura\assets\icon.ico
+LicenseFile=..\LICENSE
 UninstallDisplayIcon={app}\{#AppExe}
 Compression=lzma2/max
 SolidCompression=yes
