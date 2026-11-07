@@ -43,3 +43,12 @@ def test_header_insertion_keeps_shebang_and_is_idempotent():
     assert once.endswith('"""Doc."""\nx = 1\n')
     assert mod.has_header(once)
     assert mod.with_header("") == mod.HEADER
+
+
+def test_app_links_to_source_and_license():
+    """GPL: distributed builds (Store, installer) must say where the source is."""
+    import gestura
+
+    assert gestura.SOURCE_URL.startswith("https://github.com/")
+    text = (Path(__file__).resolve().parent.parent / "gestura" / "ui" / "main_window.py").read_text(encoding="utf-8")
+    assert "SOURCE_URL" in text and "GPL v3" in text

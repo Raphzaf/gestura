@@ -197,7 +197,7 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * Cursor control covers the **primary monitor** only.
 * Windows does not let normal apps control **elevated (admin) windows**, the UAC
   prompt or the lock screen — see [Troubleshooting](docs/TROUBLESHOOTING.md).
-* No drag-and-drop gesture yet. Head-controlled key selection was investigated but
+* Head-controlled key selection was investigated but
   not implemented (see [docs/GESTURES.md](docs/GESTURES.md#investigation-head-controlled-key-selection)).
 * Thresholds were tuned on still photos and synthetic motion; expect to adjust
   them (or re-run calibration) after real use.
@@ -214,6 +214,8 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * [Frictions d'utilisation (FR)](docs/friction_utilisation.md) — contraintes matérielles mesurées, fatigue, protocole de test
 * [Verdict commercial (FR)](docs/verdict_commercial_gestura.md) — faut-il commercialiser Gestura, et par quel canal
 * [Business plan (FR)](docs/business_plan_gestura.md) — offre B2B accessibilité, financement Agefiph / FIPHFP, projections sur 3 ans
+* [Publier sur le Microsoft Store (FR)](store/PUBLICATION.md) — liste de contrôle étape par étape
+* [Privacy policy / Politique de confidentialité](PRIVACY.md)
 
 ## License
 

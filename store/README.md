@@ -10,6 +10,8 @@ pas au build classique (`dist/`, `installer/`, `release.yml`) : tout est produit
 | `AppxManifest.template.xml` | Manifeste MSIX ; les `${...}` sont remplis depuis l'environnement et `pyproject.toml` |
 | `.env.example` | Modèle de configuration (versionné, **toutes les valeurs vides**) |
 | `.env` | Ta configuration réelle — **ignorée par git, ne jamais la committer** |
+| `PUBLICATION.md` | **Liste de contrôle pour publier sur le Store**, étape par étape |
+| `listing.md` | Textes de la fiche Store (FR/EN), notes de certification, justification de `runFullTrust` |
 | `../.github/workflows/store.yml` | Même build sur GitHub Actions (manuel), secrets lus depuis GitHub |
 
 ## 1. Configuration

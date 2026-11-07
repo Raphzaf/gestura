@@ -1,0 +1,199 @@
+# Fiche Microsoft Store — textes à copier dans Partner Center
+
+Textes prêts à coller dans *Partner Center > Gestura > Fiches du Store* (une fiche par
+langue : **Français (France)** et **English (United States)**). Partner Center affiche la
+longueur maximale de chaque champ : si un texte dépasse, raccourcis-le là-bas.
+
+Règle : la fiche doit décrire **exactement** ce que fait l'application. Pas de promesse
+médicale (« soulage », « soigne ») : voir le business plan, section 5.3.
+
+---
+
+## Français (France)
+
+### Nom du produit
+Gestura
+
+### Description courte
+Contrôlez votre PC avec les gestes de la main et les mouvements de la tête, grâce à
+votre webcam. Tout est traité sur votre ordinateur : aucune image n'est enregistrée ni
+envoyée.
+
+### Description
+Gestura transforme votre webcam en souris et en télécommande. Pointez avec l'index pour
+déplacer le curseur, pincez le pouce et l'index pour cliquer, tournez la tête pour
+changer de page : votre ordinateur Windows se contrôle sans toucher la souris.
+
+UTILE QUAND
+• la souris est inconfortable ou difficile à utiliser ;
+• vos mains sont occupées ou sales (cuisine, atelier) ;
+• vous voulez faire défiler, changer de page ou régler le son sans toucher l'ordinateur.
+
+CE QUE VOUS POUVEZ FAIRE
+• Déplacer le curseur, cliquer, double-cliquer, faire un clic droit
+• Glisser-déposer (pincer et maintenir)
+• Faire défiler verticalement et horizontalement
+• Zoomer avec les deux mains
+• Régler le volume, changer d'onglet, ancrer une fenêtre à gauche ou à droite
+• Naviguer avec la tête : page précédente / suivante, Entrée, Échap
+• Écrire avec un clavier virtuel AZERTY ou QWERTY, qui ne vole pas le focus
+• Mode « deux mains » : une main déplace le curseur, l'autre clique, pour viser juste
+• Réattribuer chaque geste et régler chaque seuil
+
+SÉCURITÉ
+• Démarre en mode test : les gestes sont reconnus mais aucune action n'est exécutée
+  tant que vous ne l'avez pas décidé
+• Pause d'un geste, arrêt d'urgence (bouton ou Ctrl+Alt+Maj+G)
+• Confirmation avant les commandes sensibles
+
+VIE PRIVÉE
+Tout le traitement se fait sur votre ordinateur. Aucune image n'est enregistrée,
+aucune donnée n'est envoyée, aucun compte n'est nécessaire, aucune connexion internet
+n'est utilisée.
+
+LOGICIEL LIBRE
+Gestura est un logiciel libre sous licence GNU GPL v3. Le code source est public sur
+GitHub. Acheter Gestura sur le Microsoft Store, c'est profiter d'une installation en un
+clic et des mises à jour automatiques, et soutenir son développement.
+
+BON À SAVOIR
+• Il faut une webcam (intégrée ou USB) et une pièce bien éclairée : dans la pénombre ou
+  à contre-jour, la main est moins bien détectée.
+• Le contrôle fonctionne à environ 30 à 80 cm de la webcam (assis devant le bureau) ;
+  au-delà d'un mètre, la détection devient aléatoire.
+• Le curseur couvre l'écran principal uniquement.
+• Windows empêche toute application de contrôler les fenêtres administrateur et l'écran
+  de verrouillage.
+• Il faut quelques minutes d'entraînement : un assistant de calibration vous guide.
+
+### Nouveautés de cette version
+Première version sur le Microsoft Store : souris à deux mains, glisser-déposer, zoom à
+deux mains, gestion des fenêtres, réglage du volume.
+
+### Fonctionnalités (une ligne par champ)
+1. Curseur et clic par gestes de la main, avec une simple webcam
+2. Glisser-déposer, défilement, zoom, volume et changement d'onglet
+3. Navigation par mouvements de la tête
+4. Clavier virtuel AZERTY / QWERTY qui ne vole pas le focus
+5. Mode deux mains : une main vise, l'autre clique
+6. Mode test, pause et arrêt d'urgence
+7. 100 % local : aucune image enregistrée ni envoyée
+8. Logiciel libre (GPL v3)
+
+### Termes de recherche (7 au maximum)
+gestes · webcam · souris sans les mains · contrôle gestuel · accessibilité · clavier virtuel · mains libres
+
+### Configuration requise (texte libre)
+Windows 10 (version 1809 ou plus récente) ou Windows 11, 64 bits · webcam · environ
+1,5 Go d'espace disque.
+
+---
+
+## English (United States)
+
+### Product name
+Gestura
+
+### Short description
+Control your PC with hand gestures and head movements using your webcam. Everything is
+processed on your computer: no image is ever saved or sent.
+
+### Description
+Gestura turns your webcam into a mouse and a remote control. Point with your index
+finger to move the pointer, pinch thumb and index to click, turn your head to change
+page: control your Windows PC without touching the mouse.
+
+USEFUL WHEN
+• using a mouse is uncomfortable or difficult;
+• your hands are busy or dirty (kitchen, workshop);
+• you want to scroll, change page or set the volume without touching the computer.
+
+WHAT YOU CAN DO
+• Move the pointer, click, double-click, right-click
+• Drag and drop (pinch and hold)
+• Scroll vertically and horizontally
+• Zoom with both hands
+• Change the volume, switch tabs, snap a window left or right
+• Navigate with your head: previous / next page, Enter, Escape
+• Type with a QWERTY or AZERTY virtual keyboard that does not steal focus
+• Two-hand mode: one hand aims, the other clicks, for precise clicks
+• Remap every gesture and tune every threshold
+
+SAFETY
+• Starts in test mode: gestures are recognised but no action is performed until you
+  decide
+• Pause with a gesture, emergency stop (button or Ctrl+Alt+Shift+G)
+• Confirmation before sensitive commands
+
+PRIVACY
+All processing happens on your computer. No image is saved, no data is sent, no
+account is needed, no internet connection is used.
+
+FREE SOFTWARE
+Gestura is free software under the GNU GPL v3. The source code is public on GitHub.
+Buying Gestura on the Microsoft Store gives you one-click installation and automatic
+updates, and supports its development.
+
+GOOD TO KNOW
+• You need a webcam (built-in or USB) and a well-lit room: in dim light or with a bright
+  window behind you, the hand is detected less reliably.
+• Control works at about 30 to 80 cm (1 to 2.5 ft) from the webcam (seated at a desk);
+  beyond one metre, detection becomes unreliable.
+• The pointer covers the primary display only.
+• Windows does not let any app control administrator windows or the lock screen.
+• Expect a few minutes of practice: a calibration wizard guides you.
+
+### What's new in this version
+First Microsoft Store release: two-hand mouse, drag and drop, two-hand zoom, window
+management, volume control.
+
+### Product features
+1. Pointer and clicks with hand gestures and a regular webcam
+2. Drag and drop, scrolling, zoom, volume and tab switching
+3. Head-movement navigation
+4. QWERTY / AZERTY virtual keyboard that does not steal focus
+5. Two-hand mode: one hand aims, the other clicks
+6. Test mode, pause and emergency stop
+7. 100% local: no image saved or sent
+8. Free software (GPL v3)
+
+### Search terms (7 max)
+gesture control · webcam mouse · hands-free · touchless · accessibility · virtual keyboard · head tracking
+
+### System requirements (free text)
+Windows 10 (version 1809 or later) or Windows 11, 64-bit · webcam · about 1.5 GB of
+disk space.
+
+---
+
+## Notes pour la certification (en anglais, champ « Notes for certification »)
+
+```
+Gestura is a desktop (Win32, full trust) accessibility and hands-free input app. It
+uses the webcam to recognise hand gestures and head movements and translates them into
+mouse and keyboard input on the user's desktop. All processing is local; the app makes
+no network connection.
+
+How to test:
+1. Launch Gestura and allow camera access when Windows asks.
+2. The app starts in TEST MODE: recognised gestures are listed on the Dashboard and in
+   Gesture Studio, but no input is sent. Untick "Test mode" on the Dashboard to act.
+3. Point with the index finger to move the pointer; pinch thumb + index to click.
+4. Emergency stop: the red button in the top bar or Ctrl+Alt+Shift+G.
+
+Without a webcam, the app opens normally and shows "Camera off"; all pages (Dashboard,
+Gesture Studio, Settings, calibration wizard, virtual keyboard) remain usable.
+
+No account, sign-in or test credentials are needed.
+```
+
+## Justification de la capacité restreinte `runFullTrust` (champ « Why do you need the runFullTrust capability… »)
+
+```
+Gestura is a classic Win32 desktop application (Python/Qt) packaged with MSIX. It needs
+full trust to inject mouse and keyboard input into other applications on the user's
+desktop (SendInput), which is the purpose of the app: hands-free control of the PC for
+people who cannot or should not use a mouse, and for hands-busy situations. It also
+registers a global emergency-stop hotkey. All processing is local; the app does not
+access the network.
+```

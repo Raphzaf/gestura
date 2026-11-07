@@ -15,7 +15,7 @@ from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (QButtonGroup, QHBoxLayout, QMainWindow, QPushButton, QStackedWidget, QVBoxLayout,
                                QWidget)
 
-from .. import __version__
+from .. import SOURCE_URL, __version__
 from ..core.safety_manager import EngineState
 from .dashboard.dashboard_page import DashboardPage
 from .gesture_studio.studio_page import StudioPage
@@ -79,6 +79,11 @@ class MainWindow(QMainWindow):
         sv.addStretch(1)
         sv.addWidget(label("All video is processed locally.\nNo footage is stored or uploaded.", "privacy"))
         sv.addWidget(label(f"v{__version__}", "privacy"))
+        # GPL v3: tell users where the source is (required wherever binaries are distributed).
+        about = label(f'Free software, <a href="{SOURCE_URL}/blob/main/LICENSE">GPL v3</a> · '
+                      f'<a href="{SOURCE_URL}">source code</a>', "privacy")
+        about.setOpenExternalLinks(True)
+        sv.addWidget(about)
         h.addWidget(side)
 
         # ---- main column
