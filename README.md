@@ -209,6 +209,7 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * [Gestures](docs/GESTURES.md) — recognition details and tuning
 * [Development](docs/DEVELOPMENT.md) — tests, packaging, adding gestures
 * [Troubleshooting](docs/TROUBLESHOOTING.md)
+* [Analyse de positionnement (FR)](docs/analyse_positionnement.md) — concurrents et proposition de valeur
 
 ## Privacy
 
