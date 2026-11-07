@@ -211,6 +211,7 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * [Troubleshooting](docs/TROUBLESHOOTING.md)
 * [Analyse de positionnement (FR)](docs/analyse_positionnement.md) — concurrents et proposition de valeur
 * [Stratégie économique (FR)](docs/business_model_gestura.md) — comparaison de trois modèles et prévisions
+* [Frictions d'utilisation (FR)](docs/friction_utilisation.md) — contraintes matérielles mesurées, fatigue, protocole de test
 
 ## Privacy
 
