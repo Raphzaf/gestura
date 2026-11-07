@@ -222,3 +222,13 @@ __marimo__/
 # Gestura
 installer/Output/
 !gestura.spec
+
+# Secrets: environment files and signing certificates — never commit them.
+# (.env itself is ignored by the rule above, at any depth, e.g. store/.env)
+.env.*
+!.env.example
+*.pfx
+*.p12
+
+# Microsoft Store build output (store/build_store.py)
+store/out/

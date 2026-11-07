@@ -6,6 +6,12 @@
   root, SPDX header in every source file (checked by a test and by
   `scripts/license_headers.py --check`), license shown by the installer and shipped
   with the executable. The unused GPL dependency `mouseinfo` is no longer bundled.
+* **Microsoft Store build profile** (`store/`): `store/build_store.py` renders the MSIX
+  manifest and logos, builds with PyInstaller into `store/out/`, packs with `makeappx`,
+  optionally test-signs and submits to Partner Center (`msstore`). Identity and secrets
+  come from environment variables / `store/.env` (git-ignored, values masked in logs);
+  manual GitHub Actions workflow `Microsoft Store`. In the packaged app, launch at
+  sign-in is a Windows startup task (Settings > Apps > Startup) instead of the Run key.
 
 ## 0.3.0
 

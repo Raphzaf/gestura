@@ -91,6 +91,22 @@ Setup 6 is installed, `installer\Output\Gestura-Setup-0.1.0.exe` (per-user insta
 no admin rights). CI builds the executable on every push and uploads it as the
 `Gestura-windows-x64` artifact.
 
+### Microsoft Store (MSIX)
+
+Isolated profile in `store/` (output in `store/out/`, never `dist/`):
+
+```powershell
+copy store\.env.example store\.env   # fill in; ignored by git, never commit it
+python store\build_store.py --check   # validate config, render manifest + logos (any OS)
+python store\build_store.py           # build store\out\Gestura_<ver>_x64.msix
+```
+
+Package identity and Partner Center credentials are read from environment variables
+(`store/.env` fills in the missing ones; real environment / CI secrets win) and are
+never printed. The Store signs the package, so no certificate is needed to publish.
+Details, CI workflow (`.github/workflows/store.yml`) and submission notes:
+[store/README.md](../store/README.md).
+
 Icons: edit `gestura/assets/icon.svg`, then `python scripts/make_icon.py`.
 Models: bundled and hash-pinned in `gestura/vision/models.py`;
 `python scripts/download_models.py` restores them (`--update` for new versions).

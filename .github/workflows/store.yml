@@ -1,0 +1,65 @@
+name: Microsoft Store
+
+# Builds the MSIX for the Microsoft Store with store/build_store.py and, on request,
+# sends it to Partner Center. Manual only: Actions > Microsoft Store > Run workflow.
+#
+# Configuration (Settings > Secrets and variables > Actions), same names as store/.env:
+#   Variables (not secret): GESTURA_STORE_IDENTITY_NAME, GESTURA_STORE_PUBLISHER,
+#                           GESTURA_STORE_PUBLISHER_DISPLAY_NAME, MSSTORE_PRODUCT_ID
+#   Secrets:                MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
+#                           MSSTORE_CLIENT_SECRET
+# No signing certificate is needed: the Store signs the package itself.
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: "Send the package to Partner Center"
+        type: boolean
+        default: false
+      commit:
+        description: "With submit: commit for certification (otherwise a draft)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    environment: microsoft-store
+    env:
+      GESTURA_STORE_IDENTITY_NAME: ${{ vars.GESTURA_STORE_IDENTITY_NAME }}
+      GESTURA_STORE_PUBLISHER: ${{ vars.GESTURA_STORE_PUBLISHER }}
+      GESTURA_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.GESTURA_STORE_PUBLISHER_DISPLAY_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt pyinstaller==6.22.3 && pip install -e . --no-deps
+      - name: Tests
+        run: python -m pytest -q
+      - name: Build MSIX
+        run: python store/build_store.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gestura-msix
+          path: store/out/*.msix
+          if-no-files-found: error
+      - name: Microsoft Store Developer CLI
+        if: inputs.submit
+        uses: microsoft/setup-msstore-cli@v1
+      - name: Submit to Partner Center
+        if: inputs.submit
+        env:
+          MSSTORE_TENANT_ID: ${{ secrets.MSSTORE_TENANT_ID }}
+          MSSTORE_SELLER_ID: ${{ secrets.MSSTORE_SELLER_ID }}
+          MSSTORE_CLIENT_ID: ${{ secrets.MSSTORE_CLIENT_ID }}
+          MSSTORE_CLIENT_SECRET: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+        shell: bash
+        run: |
+          pkg=$(ls store/out/*_x64.msix | head -1)
+          python store/build_store.py --submit --package "$pkg" ${{ inputs.commit && '--commit' || '' }}

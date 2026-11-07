@@ -32,8 +32,30 @@ def launch_command() -> str:
     return f'"{pythonw if pythonw.exists() else exe}" -m gestura --minimized'
 
 
+APPMODEL_ERROR_NO_PACKAGE = 15700
+PACKAGED_STARTUP_HINT = ("In the Microsoft Store version, turn on Gestura in Windows Settings > Apps > "
+                         "Startup (Windows does not let packaged apps use the sign-in registry key).")
+
+
+def is_packaged(kernel32=None) -> bool:
+    """True when running as an MSIX package (e.g. installed from the Microsoft Store)."""
+    if kernel32 is None:
+        if sys.platform != "win32":
+            return False
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+    import ctypes
+
+    length = ctypes.c_uint32(0)
+    rc = kernel32.GetCurrentPackageFullName(ctypes.byref(length), None)
+    return rc != APPMODEL_ERROR_NO_PACKAGE
+
+
 def is_supported() -> bool:
-    return sys.platform == "win32"
+    """The Run key works for the installer / portable builds, not for the MSIX package:
+    there, start-up is a manifest startup task the user enables in Windows Settings."""
+    return sys.platform == "win32" and not is_packaged()
 
 
 def is_enabled(registry=None) -> bool:

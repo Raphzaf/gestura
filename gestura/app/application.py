@@ -137,7 +137,11 @@ class GesturaApp(QObject):
         if settings.startup.launch_at_login != self.settings.startup.launch_at_login:
             from ..services import startup_service
 
-            if startup_service.is_supported() and not startup_service.set_enabled(settings.startup.launch_at_login):
+            if startup_service.is_packaged():
+                if settings.startup.launch_at_login:
+                    self.notice.emit(startup_service.PACKAGED_STARTUP_HINT)
+            elif startup_service.is_supported() and not startup_service.set_enabled(
+                    settings.startup.launch_at_login):
                 self.notice.emit("Could not change the launch-at-login setting.")
         self.settings = settings
         self.mouse.settings = settings.cursor

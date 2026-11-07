@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-or-later
+  Copyright (C) 2026 Gestura contributors
+
+  MSIX manifest for the Microsoft Store build. Rendered by store/build_store.py:
+  Placeholders (dollar sign + braces) come from environment variables (store/.env) and pyproject.toml.
+  Identity Name and Publisher must match Partner Center > Product identity exactly.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap desktop rescap">
+
+  <Identity
+    Name="${GESTURA_STORE_IDENTITY_NAME}"
+    Publisher="${GESTURA_STORE_PUBLISHER}"
+    Version="${VERSION}"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Gestura</DisplayName>
+    <PublisherDisplayName>${GESTURA_STORE_PUBLISHER_DISPLAY_NAME}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Hands-free desktop control with your webcam: hand and head gestures.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="fr-fr" />
+  </Resources>
+
+  <Applications>
+    <Application Id="Gestura" Executable="Gestura\Gestura.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Gestura"
+        Description="Hands-free desktop control with your webcam"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Packaged apps cannot start at sign-in through the HKCU Run key. This declares a
+             startup task the user can switch on in Windows Settings > Apps > Startup. -->
+        <desktop:Extension Category="windows.startupTask" Executable="Gestura\Gestura.exe"
+                           EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="GesturaStartup" Enabled="false" DisplayName="Gestura" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Desktop (Win32) app: needed to inject mouse and keyboard input. Restricted
+         capability: justify it in the submission notes (assistive input software). -->
+    <rescap:Capability Name="runFullTrust" />
+    <DeviceCapability Name="webcam" />
+  </Capabilities>
+</Package>
