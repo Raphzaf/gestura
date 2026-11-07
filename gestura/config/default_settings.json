@@ -50,6 +50,11 @@
     "scroll_invert": false,
     "volume_steps": 30.0,
     "volume_max_steps_per_frame": 3,
+    "drag_enabled": true,
+    "drag_hold_ms": 450,
+    "zoom_enabled": true,
+    "zoom_steps": 12.0,
+    "zoom_max_steps_per_frame": 2,
     "swipe_min_distance": 0.22,
     "swipe_window_ms": 350,
     "swipe_cooldown_ms": 1000,
@@ -112,7 +117,13 @@
       "hand.swipe_right": "browser.next_tab",
       "hand.palm_hold": "app.toggle_pause",
       "hand.volume_up": "media.volume_up",
-      "hand.volume_down": "media.volume_down"
+      "hand.volume_down": "media.volume_down",
+      "hand.drag_start": "mouse.drag_start",
+      "hand.drag_end": "mouse.drag_end",
+      "hand.zoom_in": "view.zoom_in",
+      "hand.zoom_out": "view.zoom_out",
+      "hand.three_swipe_left": "window.snap_left",
+      "hand.three_swipe_right": "window.snap_right"
     },
     "head": {
       "head.turn_left": "browser.back",

@@ -25,6 +25,26 @@ def register_executors(
     r("mouse.middle_click", lambda e: mouse.middle_click())
     r("mouse.double_click", lambda e: mouse.double_click())
     r("mouse.scroll", lambda e: mouse.scroll(e.data.get("dx", 0.0), e.data.get("dy", 0.0)))
+    r("mouse.drag_start", lambda e: mouse.drag_start())
+    r("mouse.drag_end", lambda e: mouse.drag_end())
+
+    def zoom(direction: int) -> None:
+        # Ctrl + wheel zooms in browsers, PDF/photo viewers, Office and maps on any keyboard layout.
+        already = "ctrl" in keyboard.held  # e.g. Ctrl latched on the virtual keyboard
+        if not already:
+            keyboard.hold("ctrl")
+        try:
+            mouse.scroll(0.0, float(direction))
+        finally:
+            if not already:
+                keyboard.release("ctrl")
+
+    r("view.zoom_in", lambda e: zoom(+1))
+    r("view.zoom_out", lambda e: zoom(-1))
+    for cmd, combo in (("window.snap_left", ("win", "left")), ("window.snap_right", ("win", "right")),
+                       ("window.maximize", ("win", "up")), ("window.minimize", ("win", "down")),
+                       ("window.show_desktop", ("win", "d")), ("window.task_view", ("win", "tab"))):
+        r(cmd, lambda e, c=combo: keyboard.hotkey(*c))
     r("browser.back", lambda e: nav.back())
     r("browser.forward", lambda e: nav.forward())
     r("browser.next_tab", lambda e: nav.next_tab())

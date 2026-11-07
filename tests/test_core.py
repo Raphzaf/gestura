@@ -103,6 +103,42 @@ def test_volume_gestures_press_media_keys():
     assert [c[1] for c in be.named("press")][-4:] == ["prevtrack", "nexttrack", "volumemute", "playpause"]
 
 
+def test_drag_zoom_and_window_commands():
+    eng, safety, be, _ = rig()
+    safety.start()
+    eng.handle(ev("hand.drag_start"))
+    eng.handle(ev("hand.cursor", True, x=0.3, y=0.3))
+    eng.handle(ev("hand.drag_end"))
+    eng.handle(ev("hand.drag_end"))  # a second drop sends nothing
+    assert be.named("mouse_down") == [("mouse_down", "left")] and be.named("mouse_up") == [("mouse_up", "left")]
+    be.calls.clear()
+    eng.handle(ev("hand.zoom_in"))
+    eng.handle(ev("hand.zoom_out"))
+    assert be.calls == [("key_down", "ctrl"), ("scroll", 1), ("key_up", "ctrl"),
+                        ("key_down", "ctrl"), ("scroll", -1), ("key_up", "ctrl")]
+    be.calls.clear()
+    eng.handle(ev("hand.three_swipe_left"))
+    eng.handle(ev("hand.three_swipe_right"))
+    assert be.calls == [("hotkey", "win", "left"), ("hotkey", "win", "right")]
+    eng.set_mapping({"head.roll_left": "window.show_desktop", "head.roll_right": "window.task_view",
+                     "hand.swipe_left": "window.maximize", "hand.swipe_right": "window.minimize"})
+    for g in ("head.roll_left", "head.roll_right", "hand.swipe_left", "hand.swipe_right"):
+        eng.handle(ev(g))
+    assert be.calls[-4:] == [("hotkey", "win", "d"), ("hotkey", "win", "tab"), ("hotkey", "win", "up"),
+                             ("hotkey", "win", "down")]
+
+
+def test_held_button_is_released_once():
+    from gestura.controllers.mouse_controller import MouseController
+
+    be = RecordingBackend()
+    m = MouseController(be, Settings().cursor)
+    m.drag_start()
+    m.release_buttons()
+    m.release_buttons()
+    assert be.named("mouse_up") == [("mouse_up", "left")] and not m.dragging
+
+
 def test_test_mode_simulates_without_touching_the_os():
     eng, safety, be, _ = rig(test_mode=True)
     safety.start()

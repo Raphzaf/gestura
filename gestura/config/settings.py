@@ -76,6 +76,11 @@ class HandGestureSettings(_Section):
     scroll_invert: bool = Field(False, title="Invert scroll direction")
     volume_steps: float = Field(30.0, ge=5.0, le=100.0, title="Volume steps per hand height (three fingers)")
     volume_max_steps_per_frame: int = Field(3, ge=1, le=10, title="Max volume steps per frame")
+    drag_enabled: bool = Field(True, title="Pinch and hold to drag (clicks fire on release)")
+    drag_hold_ms: int = Field(450, ge=200, le=1500, title="Hold pinch this long to start a drag (ms)")
+    zoom_enabled: bool = Field(True, title="Two open hands: spread / bring together to zoom")
+    zoom_steps: float = Field(12.0, ge=2.0, le=60.0, title="Zoom steps per frame-width of hand movement")
+    zoom_max_steps_per_frame: int = Field(2, ge=1, le=10, title="Max zoom steps per frame")
     swipe_min_distance: float = Field(0.22, ge=0.05, le=0.8, title="Swipe min distance (frame width)")
     swipe_window_ms: int = Field(350, ge=100, le=1500, title="Swipe max duration (ms)")
     swipe_cooldown_ms: int = Field(1000, ge=200, le=5000, title="Swipe cooldown (ms)")
@@ -148,6 +153,12 @@ class HandGesture(str, Enum):
     PALM_HOLD = "hand.palm_hold"
     VOLUME_UP = "hand.volume_up"
     VOLUME_DOWN = "hand.volume_down"
+    DRAG_START = "hand.drag_start"
+    DRAG_END = "hand.drag_end"
+    ZOOM_IN = "hand.zoom_in"
+    ZOOM_OUT = "hand.zoom_out"
+    THREE_SWIPE_LEFT = "hand.three_swipe_left"
+    THREE_SWIPE_RIGHT = "hand.three_swipe_right"
 
 
 class HeadGesture(str, Enum):
@@ -169,6 +180,12 @@ DEFAULT_HAND_MAPPINGS: dict[str, str] = {
     HandGesture.PALM_HOLD.value: "app.toggle_pause",
     HandGesture.VOLUME_UP.value: "media.volume_up",
     HandGesture.VOLUME_DOWN.value: "media.volume_down",
+    HandGesture.DRAG_START.value: "mouse.drag_start",
+    HandGesture.DRAG_END.value: "mouse.drag_end",
+    HandGesture.ZOOM_IN.value: "view.zoom_in",
+    HandGesture.ZOOM_OUT.value: "view.zoom_out",
+    HandGesture.THREE_SWIPE_LEFT.value: "window.snap_left",
+    HandGesture.THREE_SWIPE_RIGHT.value: "window.snap_right",
 }
 
 DEFAULT_HEAD_MAPPINGS: dict[str, str] = {

@@ -18,6 +18,7 @@ class MouseController:
         self._last: tuple[int, int] | None = None
         self._scroll_rem = [0.0, 0.0]
         self._size: tuple[int, int] | None = None
+        self._dragging = False
 
     def screen_size(self) -> tuple[int, int]:
         if self._size is None:
@@ -57,6 +58,24 @@ class MouseController:
     def double_click(self) -> None:
         self.backend.click("left", 2)
 
+    @property
+    def dragging(self) -> bool:
+        return self._dragging
+
+    def drag_start(self) -> None:
+        if not self._dragging:
+            self.backend.mouse_down("left")
+            self._dragging = True
+
+    def drag_end(self) -> None:
+        if self._dragging:
+            self._dragging = False
+            self.backend.mouse_up("left")
+
+    def release_buttons(self) -> None:
+        """Called on stop / pause / emergency: never leave the button held."""
+        self.drag_end()
+
     def scroll(self, dx: float, dy: float) -> None:
         """dx/dy in wheel notches (may be fractional)."""
         if self.backend.fractional_scroll:
@@ -76,5 +95,6 @@ class MouseController:
                 (self.backend.scroll if axis == 1 else self.backend.hscroll)(whole)
 
     def reset(self) -> None:
+        self.release_buttons()
         self._last = None
         self._scroll_rem = [0.0, 0.0]

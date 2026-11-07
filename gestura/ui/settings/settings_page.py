@@ -36,6 +36,10 @@ GESTURE_LABELS = {
     "hand.palm_hold": "Open palm held still",
     "hand.volume_up": "Three fingers, move up",
     "hand.volume_down": "Three fingers, move down",
+    "hand.zoom_in": "Two open hands, spread apart",
+    "hand.zoom_out": "Two open hands, bring together",
+    "hand.three_swipe_left": "Three-finger swipe left",
+    "hand.three_swipe_right": "Three-finger swipe right",
     "head.turn_left": "Turn head left", "head.turn_right": "Turn head right",
     "head.nod_down": "Nod down", "head.tilt_up": "Tilt head up",
     "head.roll_left": "Tilt head to left shoulder", "head.roll_right": "Tilt head to right shoulder",
@@ -156,7 +160,10 @@ class SettingsPage(QWidget):
         lay.setContentsMargins(18, 18, 18, 18)
         lay.addWidget(label("Choose what each gesture does. Only built-in, safe commands can be assigned; "
                             "commands marked * ask you to repeat the gesture to confirm.", "hint", wrap=True))
-        for title, gestures in (("Hand", [g.value for g in HandGesture]), ("Head", [g.value for g in HeadGesture])):
+        # Drag start/end work as a pair (press / release) and are not remappable.
+        fixed = {HandGesture.DRAG_START.value, HandGesture.DRAG_END.value}
+        hand = [g.value for g in HandGesture if g.value not in fixed]
+        for title, gestures in (("Hand", hand), ("Head", [g.value for g in HeadGesture])):
             form = QFormLayout()
             form.setVerticalSpacing(8)
             form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)

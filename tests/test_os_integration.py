@@ -172,3 +172,79 @@ def test_virtual_keyboard_types_into_another_window_via_real_clicks(rig, qt):
     assert target.text() == "salut", "keystrokes must reach the focused window, not the keyboard"
     kw.close()
     target.close()
+
+
+class _Recorder:
+    """A real window that records the mouse/wheel events it receives from the OS."""
+
+    def __init__(self, qt):
+        from PySide6.QtCore import QEvent, QObject, Qt
+        from PySide6.QtWidgets import QWidget
+
+        self.events = []
+        rec = self
+
+        class Pad(QWidget):
+            def mousePressEvent(self, e):  # noqa: N802
+                rec.events.append(("press", e.globalPosition().toPoint().toTuple()))
+
+            def mouseMoveEvent(self, e):  # noqa: N802
+                if e.buttons() & Qt.MouseButton.LeftButton:
+                    rec.events.append(("drag_move", e.globalPosition().toPoint().toTuple()))
+
+            def mouseReleaseEvent(self, e):  # noqa: N802
+                rec.events.append(("release", e.globalPosition().toPoint().toTuple()))
+
+            def wheelEvent(self, e):  # noqa: N802
+                rec.events.append(("wheel", e.angleDelta().y(),
+                                   bool(e.modifiers() & Qt.KeyboardModifier.ControlModifier)))
+
+        self.w = Pad()
+        self.w.setMouseTracking(True)
+        self.w.resize(1400, 900)
+        self.w.move(20, 20)
+        self.w.show()
+        self.w.activateWindow()
+        pump(qt, 0.5)
+
+
+def test_pinch_hold_drags_with_the_real_mouse_button(rig, qt):
+    be, eng, hands, safety, _ = rig
+    rec = _Recorder(qt)
+    clock = Clock()
+    drive(eng, hands, clock, "point", 30, x=0.45, y=0.75)
+    pump(qt)
+    start = be.position()
+    drive(eng, hands, clock, "pinch", 16, x=0.45, y=0.75)  # hold -> drag starts
+    for i in range(20):
+        drive(eng, hands, clock, "pinch", x=0.45 + i * 0.006, y=0.75)
+        qt.processEvents()
+    drive(eng, hands, clock, "point", 4, x=0.57, y=0.75)  # release -> drop
+    pump(qt, 0.4)
+    kinds = [e[0] for e in rec.events]
+    assert "press" in kinds and "release" in kinds, rec.events
+    press = next(e for e in rec.events if e[0] == "press")
+    release = next(e for e in rec.events if e[0] == "release")
+    assert kinds.index("press") < kinds.index("release")
+    assert "drag_move" in kinds[kinds.index("press"):kinds.index("release")]
+    assert abs(press[1][0] - start[0]) <= 3, "drag must start where the cursor was aimed"
+    assert release[1][0] - press[1][0] > 80, "the button must stay held while the hand moves"
+    rec.w.close()
+
+
+def test_zoom_sends_a_real_ctrl_wheel(rig, qt):
+    be, eng, hands, safety, kb = rig
+    rec = _Recorder(qt)
+    be.move_to(600, 400)
+    pump(qt)
+    from gestura.core.types import GestureEvent
+
+    for _ in range(2):
+        eng.handle(GestureEvent("hand.zoom_in", 1.0, {}, "Zoom in"))
+    eng.handle(GestureEvent("hand.zoom_out", 1.0, {}, "Zoom out"))
+    pump(qt, 0.4)
+    wheels = [e for e in rec.events if e[0] == "wheel"]
+    assert len(wheels) == 3 and all(e[2] for e in wheels), rec.events
+    assert wheels[0][1] > 0 and wheels[2][1] < 0
+    assert kb.held == frozenset()
+    rec.w.close()

@@ -170,3 +170,18 @@ def test_calibration_wizard_steps(window, qt, monkeypatch):
     assert wiz.draft.head.calibrated and wiz.draft.head.neutral_yaw == pytest.approx(4.0)
     wiz.accept()
     assert app.settings.head.calibrated
+
+
+def test_emergency_stop_releases_a_held_mouse_button(window, qt):
+    w, app, be, _ = window
+    app.mouse.drag_start()
+    app.emergency_stop()
+    qt.processEvents()
+    assert be.named("mouse_down") and be.named("mouse_up") and not app.mouse.dragging
+
+
+def test_drag_gestures_are_not_remappable_in_settings(window):
+    w, app, be, _ = window
+    keys = [k for k in w.settings_page._widgets if k[0] == "mapping"]
+    assert ("mapping", "hand.zoom_in") in keys and ("mapping", "hand.three_swipe_left") in keys
+    assert ("mapping", "hand.drag_start") not in keys and ("mapping", "hand.drag_end") not in keys

@@ -6,24 +6,29 @@ Design rules
   `pinch_min_frames`, holds need time, swipes need distance within a window.
 * Hysteresis on every threshold (pinch closes below `pinch_on_ratio`, opens
   above `pinch_off_ratio`).
-* Losing the hand resets all transient state so nothing stays "pressed".
+* Losing the hand resets all transient state so nothing stays "pressed"; a
+  drag in progress is always ended with a drop event.
 * A fist is a clutch: while held, the hand produces no events at all.
 * The engine only *describes* gestures. It never touches the OS.
 
 Interaction model
 -----------------
-POINT (index extended)            -> hand.cursor (continuous, smoothed)
-thumb+index pinch                 -> hand.pinch (count=1, or 2 for a quick second pinch)
-thumb+middle pinch                -> hand.middle_pinch
-TWO (index+middle extended) move  -> hand.scroll (continuous, dx/dy in notches)
-THREE (index+middle+ring) up/down -> hand.volume_up / hand.volume_down (one event per step)
-OPEN palm, fast horizontal move   -> hand.swipe_left / hand.swipe_right
-OPEN palm held still              -> hand.palm_hold
-FIST                              -> clutch (nothing)
+POINT (index extended)              -> hand.cursor (continuous, smoothed)
+thumb+index pinch, released         -> hand.pinch (count=1, or 2 for a quick second pinch)
+thumb+index pinch held              -> hand.drag_start, cursor follows, release -> hand.drag_end
+thumb+middle pinch                  -> hand.middle_pinch
+TWO (index+middle) move             -> hand.scroll (continuous, dx/dy in notches)
+THREE (index+middle+ring) up/down   -> hand.volume_up / hand.volume_down (one event per step)
+THREE, fast horizontal swipe        -> hand.three_swipe_left / hand.three_swipe_right
+OPEN palm, fast horizontal move     -> hand.swipe_left / hand.swipe_right
+OPEN palm held still                -> hand.palm_hold
+two OPEN hands, spread / bring in   -> hand.zoom_in / hand.zoom_out (one event per step)
+FIST                                -> clutch (nothing)
 
-A double click is produced by two single clicks within the OS double-click
-interval, exactly like a physical mouse. The second quick pinch is labelled
-"Double click" (count=2) for feedback, but executes as one more click.
+With drag enabled, a click fires when the pinch *opens* (so a held pinch can
+become a drag instead). A double click is two clicks within the OS
+double-click interval, exactly like a physical mouse; the second quick one is
+labelled "Double click" (count=2) for feedback.
 """
 
 from __future__ import annotations
@@ -34,13 +39,14 @@ from dataclasses import dataclass, field, replace
 
 from ..config.settings import CursorSettings, HandGesture, HandGestureSettings, TrackingSettings
 from ..core.types import GestureEvent, HandObservation, TrackingFrame
-from .filters import OneEuro2D
+from .filters import OneEuro2D, OneEuroFilter
 from .gesture_state import Cooldown, Debounced, HoldTimer
 from .hand_features import HandFeatures, Pose, compute
 
 # Guards measured on sample photos (see docs/GESTURES.md):
 MIN_INDEX_REACH_FOR_PINCH = 0.55  # a fist has index reach ~0.49
 MIN_MIDDLE_REACH_FOR_PINCH = 0.60  # pointing with thumb on middle has ~0.46
+ZOOM_AFTERGLOW_S = 1.0  # single-palm gestures stay off this long after a two-hand zoom
 
 
 class PinchPhase(str, enum.Enum):
@@ -54,21 +60,22 @@ class _Pinch:
         self.phase = PinchPhase.OPEN
         self.frames = 0
 
-    def update(self, close_cond: bool, open_cond: bool, min_frames: int) -> bool:
-        """Returns True on the frame the pinch becomes CLOSED."""
+    def update(self, close_cond: bool, open_cond: bool, min_frames: int) -> str | None:
+        """Returns "closed" on the frame the pinch closes, "opened" when a closed pinch opens."""
         if self.phase == PinchPhase.CLOSED:
             if open_cond:
                 self.phase, self.frames = PinchPhase.OPEN, 0
-            return False
+                return "opened"
+            return None
         if close_cond:
             self.frames += 1
             self.phase = PinchPhase.CLOSING
             if self.frames >= min_frames:
                 self.phase = PinchPhase.CLOSED
-                return True
+                return "closed"
         else:
             self.phase, self.frames = PinchPhase.OPEN, 0
-        return False
+        return None
 
     @property
     def engaged(self) -> bool:
@@ -76,6 +83,28 @@ class _Pinch:
 
     def reset(self) -> None:
         self.phase, self.frames = PinchPhase.OPEN, 0
+
+
+class _Steps:
+    """Turns accumulated motion into whole steps, capped per frame, without backlog."""
+
+    def __init__(self) -> None:
+        self.acc = 0.0
+
+    def feed(self, amount: float, cap: int) -> int:
+        self.acc += amount
+        n = 0
+        while self.acc >= 1 and n < cap:
+            self.acc -= 1
+            n += 1
+        while self.acc <= -1 and -n < cap:
+            self.acc += 1
+            n -= 1
+        self.acc = max(-0.999, min(0.999, self.acc))
+        return n
+
+    def reset(self) -> None:
+        self.acc = 0.0
 
 
 @dataclass(slots=True)
@@ -89,13 +118,14 @@ class HandState:
     pose: Pose = Pose.NONE
     raw_pose: Pose = Pose.NONE
     features: HandFeatures | None = None
-    mode: str = "idle"  # idle | cursor | scroll | volume | palm | clutch
+    mode: str = "idle"  # idle | cursor | drag | scroll | volume | zoom | palm | clutch
     cursor_frame: tuple[float, float] | None = None  # smoothed anchor, frame coords
     cursor_screen: tuple[float, float] | None = None  # 0..1 screen coords
     frozen: bool = False
     left_pinch: str = "open"
     right_pinch: str = "open"
     palm_progress: float = 0.0
+    dragging: bool = False
     last_events: list[str] = field(default_factory=list)
 
 
@@ -103,10 +133,14 @@ class HandGestureEngine:
     def __init__(self, hand: HandGestureSettings, cursor: CursorSettings, tracking: TrackingSettings) -> None:
         self._cursor_filter = OneEuro2D()
         self._scroll_filter = OneEuro2D(min_cutoff=3.0, beta=0.0)
-        self._volume_filter = OneEuro2D(min_cutoff=3.0, beta=0.0)
-        self._prev_volume: float | None = None
-        self._volume_acc = 0.0
+        self._three_filter = OneEuro2D(min_cutoff=3.0, beta=0.0)
+        self._zoom_filter = OneEuroFilter(min_cutoff=3.0, beta=0.0)
+        self._prev_three: tuple[float, float] | None = None
+        self._prev_zoom: float | None = None
+        self._volume_steps = _Steps()
+        self._zoom_steps = _Steps()
         self._pose = Debounced(Pose.NONE, 3)
+        self._zoom_pose = Debounced(False, 3)
         self._left = _Pinch()
         self._right = _Pinch()
         self._click_cd = Cooldown(0.1)
@@ -116,8 +150,12 @@ class HandGestureEngine:
         self._palm = HoldTimer()
         self._palm_latched = False
         self._palm_hist: deque[tuple[float, float, float]] = deque()  # (t, x, y)
+        self._three_hist: deque[tuple[float, float, float]] = deque()
         self._last_click_t = float("-inf")
         self._click_count = 0
+        self._pinch_closed_at: float | None = None  # pending click (drag enabled)
+        self._dragging = False
+        self._zoom_until = float("-inf")
         self._last_seen = float("-inf")
         self._prev_scroll: tuple[float, float] | None = None
         self._cursor_active = False
@@ -129,6 +167,7 @@ class HandGestureEngine:
     def configure(self, hand: HandGestureSettings, cursor: CursorSettings, tracking: TrackingSettings) -> None:
         self.hs, self.cs, self.ts = hand, cursor, tracking
         self._pose.min_frames = hand.pose_min_frames
+        self._zoom_pose.min_frames = hand.pose_min_frames
         self._click_cd.seconds = hand.click_cooldown_ms / 1000
         self._right_cd.seconds = hand.right_click_cooldown_ms / 1000
         self._pause_cd.seconds = hand.pause_cooldown_ms / 1000
@@ -138,16 +177,23 @@ class HandGestureEngine:
     def reset(self) -> None:
         self._cursor_filter.reset()
         self._scroll_filter.reset()
+        self._three_filter.reset()
+        self._zoom_filter.reset()
+        self._prev_three = None
+        self._prev_zoom = None
+        self._volume_steps.reset()
+        self._zoom_steps.reset()
         self._pose.reset(Pose.NONE)
+        self._zoom_pose.reset(False)
         self._left.reset()
         self._right.reset()
         self._palm.reset()
         self._palm_latched = False
         self._palm_hist.clear()
+        self._three_hist.clear()
+        self._pinch_closed_at = None
+        self._dragging = False
         self._prev_scroll = None
-        self._volume_filter.reset()
-        self._prev_volume = None
-        self._volume_acc = 0.0
         self._cursor_active = False
         self._handedness = None
         self.state = HandState()
@@ -178,19 +224,39 @@ class HandGestureEngine:
         v = 0.5 + (v - 0.5) * c.speed
         return min(1.0, max(0.0, u)), min(1.0, max(0.0, v))
 
+    def _end_drag(self, now: float, events: list[GestureEvent]) -> None:
+        if self._dragging:
+            self._dragging = False
+            events.append(GestureEvent(HandGesture.DRAG_END.value, now, {}, "Drop"))
+
+    def _click(self, now: float, events: list[GestureEvent]) -> None:
+        if not self._click_cd.ready(now):
+            return
+        self._click_cd.trigger(now)
+        quick = (now - self._last_click_t) <= self.hs.double_click_window_ms / 1000
+        self._click_count = 2 if quick and self._click_count == 1 else 1
+        self._last_click_t = now
+        events.append(GestureEvent(HandGesture.PINCH.value, now, {"count": self._click_count},
+                                   "Double click" if self._click_count == 2 else "Left click"))
+
     # ----------------------------------------------------------------- update
     def update(self, tf: TrackingFrame) -> list[GestureEvent]:
         now = tf.timestamp
         events: list[GestureEvent] = []
-        idx = self.select_hand(tf.hands)
 
+        zoom = self._update_zoom(tf, now, events)
+        if zoom is not None:
+            return events
+
+        idx = self.select_hand(tf.hands)
         if idx is None:
             if now - self._last_seen > self.hs.lost_reset_ms / 1000:
+                self._end_drag(now, events)  # never leave the button pressed
                 if self.state.visible or self._cursor_active or self._left.engaged:
                     self.reset()
             # New snapshot (never mutate one the UI thread may be reading).
-            self.state = replace(self.state, visible=False, mode="idle", last_events=[],
-                                 cursor_frame=None, cursor_screen=None)
+            self.state = replace(self.state, visible=False, mode="idle", last_events=[e.label for e in events],
+                                 cursor_frame=None, cursor_screen=None, dragging=self._dragging)
             return events
 
         self._last_seen = now
@@ -216,37 +282,49 @@ class HandGestureEngine:
         pose = self._pose.value
         clutch = pose == Pose.FIST
 
-        left_fired = self._left.update(left_close, left_open, hs.pinch_min_frames)
-        right_fired = self._right.update(right_close, right_open, hs.pinch_min_frames)
+        left_ev = self._left.update(left_close, left_open, hs.pinch_min_frames)
+        right_ev = self._right.update(right_close, right_open, hs.pinch_min_frames)
 
-        # ---- clicks
-        if left_fired and not clutch and self._click_cd.ready(now):
-            self._click_cd.trigger(now)
-            quick = (now - self._last_click_t) <= hs.double_click_window_ms / 1000
-            self._click_count = 2 if quick and self._click_count == 1 else 1
-            self._last_click_t = now
-            events.append(GestureEvent(
-                HandGesture.PINCH.value, now, {"count": self._click_count},
-                "Double click" if self._click_count == 2 else "Left click"))
-        if right_fired and not clutch and self._right_cd.ready(now):
+        # ---- left pinch: click, or hold to drag
+        if left_ev == "closed" and not clutch:
+            if hs.drag_enabled:
+                self._pinch_closed_at = now  # decide on release (click) or after the hold (drag)
+            else:
+                self._click(now, events)
+        if (self._pinch_closed_at is not None and not self._dragging
+                and self._left.phase == PinchPhase.CLOSED
+                and now - self._pinch_closed_at >= hs.drag_hold_ms / 1000):
+            self._pinch_closed_at = None
+            self._dragging = True
+            events.append(GestureEvent(HandGesture.DRAG_START.value, now, {}, "Drag"))
+        if left_ev == "opened":
+            if self._dragging:
+                self._end_drag(now, events)
+                self._last_click_t = now  # brief freeze so the drop lands where released
+                self._click_count = 0
+            elif self._pinch_closed_at is not None:
+                self._pinch_closed_at = None
+                if not clutch:
+                    self._click(now, events)
+        if right_ev == "closed" and not clutch and not self._dragging and self._right_cd.ready(now):
             self._right_cd.trigger(now)
             self._last_click_t = now
             self._click_count = 0
             events.append(GestureEvent(HandGesture.MIDDLE_PINCH.value, now, {}, "Right click"))
 
-        # ---- cursor
+        # ---- cursor (also moves while dragging)
         mode = "idle"
         frozen = False
         cursor_frame = cursor_screen = None
-        if clutch:
+        if clutch and not self._dragging:
             mode = "clutch"
-        elif pose == Pose.POINT or (pinching and self._cursor_active):
-            mode = "cursor"
+        elif pose == Pose.POINT or self._dragging or (pinching and self._cursor_active):
+            mode = "drag" if self._dragging else "cursor"
             anchor = f.index_tip if self.cs.anchor == "index_tip" else f.index_mcp
             if not self._cursor_active:
                 self._cursor_filter.reset()
             freeze_ratio = self.cs.freeze_ratio
-            frozen = self.cs.freeze_on_pinch and (
+            frozen = self.cs.freeze_on_pinch and not self._dragging and (
                 pinching
                 or (f.thumb_index < freeze_ratio and f.thumb_middle >= hs.pinch_separation * f.thumb_index)
                 or (now - self._last_click_t) < self.cs.post_click_freeze_ms / 1000
@@ -286,35 +364,38 @@ class HandGestureEngine:
             self._prev_scroll = None
             self._scroll_filter.reset()
 
-        # ---- volume: three fingers, vertical movement; each step is one volume key press
+        # ---- three fingers: vertical = volume steps, fast horizontal swipe = window snap
         if pose == Pose.THREE and not clutch and not pinching:
             mode = "volume"
-            _, vy = self._volume_filter(f.two_tip[0], f.two_tip[1], now)
-            if self._prev_volume is not None:
-                dy = vy - self._prev_volume
-                if abs(dy) > hs.scroll_dead_zone:
-                    self._volume_acc += -dy * hs.volume_steps  # hand up -> louder
-                steps = 0
-                while self._volume_acc >= 1 and steps < hs.volume_max_steps_per_frame:
-                    self._volume_acc -= 1
-                    steps += 1
-                    events.append(GestureEvent(HandGesture.VOLUME_UP.value, now, {}, "Volume up"))
-                while self._volume_acc <= -1 and steps < hs.volume_max_steps_per_frame:
-                    self._volume_acc += 1
-                    steps += 1
-                    events.append(GestureEvent(HandGesture.VOLUME_DOWN.value, now, {}, "Volume down"))
-                # Don't bank a long backlog: excess movement beyond the per-frame cap is dropped.
-                self._volume_acc = max(-0.999, min(0.999, self._volume_acc))
-            self._prev_volume = vy
+            tx, ty = self._three_filter(f.two_tip[0], f.two_tip[1], now)
+            self._three_hist.append((now, f.two_tip[0], f.two_tip[1]))
+            while self._three_hist and now - self._three_hist[0][0] > hs.swipe_window_ms / 1000:
+                self._three_hist.popleft()
+            swipe = self._detect_swipe(self._three_hist, now, HandGesture.THREE_SWIPE_LEFT,
+                                       HandGesture.THREE_SWIPE_RIGHT, "Three-finger swipe")
+            if swipe:
+                events.append(swipe)
+                self._three_hist.clear()
+                self._volume_steps.reset()
+            elif self._prev_three is not None:
+                dx, dy = tx - self._prev_three[0], ty - self._prev_three[1]
+                if abs(dy) > hs.scroll_dead_zone and abs(dy) >= abs(dx):  # vertical only
+                    n = self._volume_steps.feed(-dy * hs.volume_steps, hs.volume_max_steps_per_frame)
+                    for _ in range(abs(n)):
+                        g, label = ((HandGesture.VOLUME_UP, "Volume up") if n > 0
+                                    else (HandGesture.VOLUME_DOWN, "Volume down"))
+                        events.append(GestureEvent(g.value, now, {}, label))
+            self._prev_three = (tx, ty)
         else:
-            self._prev_volume = None
-            self._volume_acc = 0.0
-            self._volume_filter.reset()
+            self._prev_three = None
+            self._volume_steps.reset()
+            self._three_filter.reset()
+            self._three_hist.clear()
 
-        # ---- open palm: swipe and hold
+        # ---- open palm: swipe and hold (off briefly after a two-hand zoom)
         palm_progress = 0.0
         raw_open = f.pose == Pose.OPEN
-        if raw_open and not pinching:
+        if raw_open and not pinching and now >= self._zoom_until:
             if mode == "idle":
                 mode = "palm"
             px, py = f.palm_center
@@ -322,7 +403,8 @@ class HandGestureEngine:
             window = hs.swipe_window_ms / 1000
             while self._palm_hist and now - self._palm_hist[0][0] > window:
                 self._palm_hist.popleft()
-            swipe = self._detect_swipe(now)
+            swipe = self._detect_swipe(self._palm_hist, now, HandGesture.SWIPE_LEFT, HandGesture.SWIPE_RIGHT,
+                                       "Swipe")
             if swipe:
                 events.append(swipe)
                 self._palm.reset()
@@ -346,10 +428,55 @@ class HandGestureEngine:
             cursor_frame=cursor_frame, cursor_screen=cursor_screen, frozen=frozen,
             left_pinch=self._left.phase.value, right_pinch=self._right.phase.value,
             palm_progress=palm_progress if not self._palm_latched else 1.0,
+            dragging=self._dragging,
             last_events=[e.label for e in events if not e.continuous],
         )
         return events
 
+    # ------------------------------------------------------------- two hands
+    def _update_zoom(self, tf: TrackingFrame, now: float, events: list[GestureEvent]):
+        """Two open hands: spreading them zooms in, bringing them together zooms out.
+
+        Returns None when not zooming (the single-hand pipeline then runs).
+        """
+        hs = self.hs
+        both_open = False
+        feats: list[HandFeatures] = []
+        if hs.zoom_enabled and len(tf.hands) >= 2 and not self._dragging:
+            top2 = sorted(range(len(tf.hands)), key=lambda i: tf.hands[i].score, reverse=True)[:2]
+            feats = [compute(tf.hands[i]) for i in top2]
+            both_open = all(fe.pose == Pose.OPEN for fe in feats)
+        self._zoom_pose.update(both_open)
+        if not (self._zoom_pose.value and len(feats) == 2):
+            if self._prev_zoom is not None:  # leaving zoom mode
+                self._prev_zoom = None
+                self._zoom_filter.reset()
+                self._zoom_steps.reset()
+                self._zoom_pose.reset(False)
+            return None
+        (ax, ay), (bx, by) = feats[0].palm_center, feats[1].palm_center
+        d = self._zoom_filter(((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5, now)
+        if self._prev_zoom is not None:
+            dd = d - self._prev_zoom
+            if abs(dd) > hs.scroll_dead_zone:
+                n = self._zoom_steps.feed(dd * hs.zoom_steps, hs.zoom_max_steps_per_frame)
+                for _ in range(abs(n)):
+                    g, label = (HandGesture.ZOOM_IN, "Zoom in") if n > 0 else (HandGesture.ZOOM_OUT, "Zoom out")
+                    events.append(GestureEvent(g.value, now, {}, label))
+        self._prev_zoom = d
+        # Single-hand gestures that use an open palm are suspended while zooming and shortly after.
+        self._zoom_until = now + ZOOM_AFTERGLOW_S
+        self._palm.reset()
+        self._palm_hist.clear()
+        self._palm_latched = False
+        self._cursor_active = False
+        self._last_seen = now
+        self.state = HandState(visible=True, hand_index=None, handedness="Both", score=min(
+            h.score for h in tf.hands[:2]), pose=Pose.OPEN, raw_pose=Pose.OPEN, features=feats[0], mode="zoom",
+            last_events=[e.label for e in events])
+        return True
+
+    # --------------------------------------------------------------- helpers
     def _palm_speed(self) -> float | None:
         """Palm speed over the last ~150 ms, in frame-widths per second."""
         if len(self._palm_hist) < 2:
@@ -362,11 +489,11 @@ class HandGestureEngine:
             return None
         return ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5 / (t1 - t0)
 
-    def _detect_swipe(self, now: float) -> GestureEvent | None:
-        if len(self._palm_hist) < 3 or not self._swipe_cd.ready(now):
+    def _detect_swipe(self, hist, now: float, left: HandGesture, right: HandGesture, label: str):
+        if len(hist) < 3 or not self._swipe_cd.ready(now):
             return None
-        xs = [x for _, x, _ in self._palm_hist]
-        ys = [y for _, _, y in self._palm_hist]
+        xs = [x for _, x, _ in hist]
+        ys = [y for _, _, y in hist]
         dx = xs[-1] - xs[0]
         dy = max(ys) - min(ys)
         if abs(dx) < self.hs.swipe_min_distance or dy > abs(dx) * 0.6:
@@ -378,5 +505,5 @@ class HandGestureEngine:
             return None
         self._swipe_cd.trigger(now)
         if dx > 0:
-            return GestureEvent(HandGesture.SWIPE_RIGHT.value, now, {"distance": dx}, "Swipe right")
-        return GestureEvent(HandGesture.SWIPE_LEFT.value, now, {"distance": -dx}, "Swipe left")
+            return GestureEvent(right.value, now, {"distance": dx}, f"{label} right")
+        return GestureEvent(left.value, now, {"distance": -dx}, f"{label} left")

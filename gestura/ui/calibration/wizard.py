@@ -121,7 +121,10 @@ class CalibrationWizard(QDialog):
         self.checks: dict[str, QLabel] = {}
         for key, text in (("hand.pinch", "Pinch (left click)"), ("hand.middle_pinch", "Thumb + middle (right click)"),
                           ("hand.scroll", "Two fingers up/down (scroll)"),
-                          ("hand.volume", "Three fingers up/down (volume)"), ("hand.palm_hold", "Hold open palm (pause)"),
+                          ("hand.volume", "Three fingers up/down (volume)"),
+                          ("hand.drag", "Pinch and hold, move, release (drag)"),
+                          ("hand.zoom", "Two open hands apart / together (zoom)"),
+                          ("hand.palm_hold", "Hold open palm (pause)"),
                           ("head.turn_left", "Turn head left"), ("head.turn_right", "Turn head right"),
                           ("head.nod_down", "Nod down")):
             lab = label(f"○  {text}", "value")
@@ -306,7 +309,11 @@ class CalibrationWizard(QDialog):
                 self._dir_since = 0.0
 
     def _on_gesture(self, ev) -> None:
-        self._mark("hand.volume" if ev.name.startswith("hand.volume") else ev.name)
+        name = ev.name
+        for prefix, key in (("hand.volume", "hand.volume"), ("hand.drag", "hand.drag"), ("hand.zoom", "hand.zoom")):
+            if name.startswith(prefix):
+                name = key
+        self._mark(name)
 
     def _mark(self, name: str) -> None:
         if name in self.checks and name not in self._seen:

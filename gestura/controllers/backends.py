@@ -36,6 +36,8 @@ class InputBackend(Protocol):
     def position(self) -> tuple[int, int]: ...
     def move_to(self, x: int, y: int) -> None: ...
     def click(self, button: str = "left", clicks: int = 1) -> None: ...
+    def mouse_down(self, button: str = "left") -> None: ...
+    def mouse_up(self, button: str = "left") -> None: ...
     def scroll(self, notches: float) -> None: ...
     def hscroll(self, notches: float) -> None: ...
     def press(self, key: str) -> None: ...
@@ -83,6 +85,19 @@ class PyAutoGuiBackend:
 
     def click(self, button: str = "left", clicks: int = 1) -> None:
         self._call(self._pg.click, button=button, clicks=clicks, interval=0.0, _pause=False)
+
+    def mouse_down(self, button: str = "left") -> None:
+        self._call(self._pg.mouseDown, button=button, _pause=False)
+
+    def mouse_up(self, button: str = "left") -> None:
+        # Releasing a held button must never be blocked by the fail-safe.
+        with self._lock:
+            saved = self._pg.FAILSAFE
+            self._pg.FAILSAFE = False
+            try:
+                self._pg.mouseUp(button=button, _pause=False)
+            finally:
+                self._pg.FAILSAFE = saved
 
     def scroll(self, notches: float) -> None:
         if self._win:
@@ -146,6 +161,12 @@ class RecordingBackend:
 
     def click(self, button: str = "left", clicks: int = 1) -> None:
         self.calls.append(("click", button, clicks))
+
+    def mouse_down(self, button: str = "left") -> None:
+        self.calls.append(("mouse_down", button))
+
+    def mouse_up(self, button: str = "left") -> None:
+        self.calls.append(("mouse_up", button))
 
     def scroll(self, notches: float) -> None:
         self.calls.append(("scroll", notches))

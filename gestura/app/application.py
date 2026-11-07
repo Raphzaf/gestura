@@ -110,6 +110,7 @@ class GesturaApp(QObject):
         self.safety.set_test_mode(on)
 
     def _release_inputs(self) -> None:
+        self.mouse.release_buttons()
         self.keyboard.release_all()
         self.mouse.reset()
 

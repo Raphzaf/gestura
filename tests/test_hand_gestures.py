@@ -98,13 +98,20 @@ def test_no_cursor_for_fist_open_or_two_fingers():
 
 
 # --------------------------------------------------------------------------- clicks
-def test_single_pinch_fires_exactly_one_click_even_when_held():
+def test_quick_pinch_clicks_once_on_release():
     eng, clock = engine(), Clock()
     feed(eng, clock, "point", 6)
+    during = feed(eng, clock, "pinch", 5)  # ~170 ms, shorter than the drag hold
+    assert "hand.pinch" not in names(during)
+    after = feed(eng, clock, "point", 6)
+    assert names(after).count("hand.pinch") == 1
+
+
+def test_click_fires_on_close_when_drag_is_disabled():
+    eng, clock = engine(drag_enabled=False), Clock()
+    feed(eng, clock, "point", 6)
     ev = feed(eng, clock, "pinch", 20)
-    assert names(ev).count("hand.pinch") == 1
-    ev += feed(eng, clock, "point", 6)
-    assert names(ev).count("hand.pinch") == 1
+    assert names(ev) == ["hand.pinch"]
 
 
 def test_single_frame_pinch_is_ignored():
@@ -117,7 +124,8 @@ def test_single_frame_pinch_is_ignored():
 def test_two_quick_pinches_are_a_double_click():
     eng, clock = engine(), Clock()
     feed(eng, clock, "point", 6)
-    ev = feed(eng, clock, "pinch", 3) + feed(eng, clock, "point", 3) + feed(eng, clock, "pinch", 3)
+    ev = (feed(eng, clock, "pinch", 3) + feed(eng, clock, "point", 3) + feed(eng, clock, "pinch", 3)
+          + feed(eng, clock, "point", 3))
     clicks = [e for e in ev if e.name == "hand.pinch"]
     assert [c.data["count"] for c in clicks] == [1, 2]
     assert clicks[1].label == "Double click"
@@ -126,7 +134,8 @@ def test_two_quick_pinches_are_a_double_click():
 def test_slow_pinches_are_two_single_clicks():
     eng, clock = engine(), Clock()
     feed(eng, clock, "point", 6)
-    ev = feed(eng, clock, "pinch", 3) + feed(eng, clock, "point", 30) + feed(eng, clock, "pinch", 3)
+    ev = (feed(eng, clock, "pinch", 3) + feed(eng, clock, "point", 30) + feed(eng, clock, "pinch", 3)
+          + feed(eng, clock, "point", 3))
     assert [e.data["count"] for e in ev if e.name == "hand.pinch"] == [1, 1]
 
 
@@ -160,9 +169,9 @@ def test_losing_the_hand_releases_pinch_state():
     for _ in range(15):
         eng.update(frame(clock.tick(), []))
     assert eng.state.left_pinch == "open" and not eng.state.visible
-    # coming back already pinched must not click (needs an open->closed transition)
+    # the interrupted pinch never clicks; a fresh pinch afterwards does
     feed(eng, clock, "point", 6)
-    ev = feed(eng, clock, "pinch", 5)
+    ev = feed(eng, clock, "pinch", 5) + feed(eng, clock, "point", 4)
     assert names(ev).count("hand.pinch") == 1
 
 
@@ -284,3 +293,97 @@ def test_switching_three_to_open_palm_does_not_change_volume():
     feed(eng, clock, "three", 8, y=0.6)
     ev = feed(eng, clock, "open", 20, y=0.6)
     assert not [n for n in names(ev) if "volume" in n]
+
+
+# --------------------------------------------------------------------------- drag and drop
+def test_pinch_and_hold_drags_and_release_drops():
+    eng, clock = engine(), Clock()
+    feed(eng, clock, "point", 8, x=0.4)
+    hold = feed(eng, clock, "pinch", 16, x=0.4)  # ~530 ms > 450 ms hold
+    assert names(hold) == ["hand.drag_start"]
+    assert eng.state.dragging and eng.state.mode == "drag"
+    moves = []
+    for i in range(15):  # move while still pinched: the cursor must follow
+        moves += feed(eng, clock, "pinch", x=0.4 + i * 0.01)
+    xs = [e.data["x"] for e in moves if e.name == "hand.cursor"]
+    assert len(xs) >= 10 and xs[-1] > xs[0] + 0.1
+    drop = feed(eng, clock, "point", 4, x=0.54)
+    assert names(drop) == ["hand.drag_end"]
+    assert "hand.pinch" not in names(hold + moves + drop)
+    assert not eng.state.dragging
+
+
+def test_losing_the_hand_mid_drag_drops():
+    eng, clock = engine(), Clock()
+    feed(eng, clock, "point", 8)
+    feed(eng, clock, "pinch", 16)
+    assert eng.state.dragging
+    ev = []
+    for _ in range(12):
+        ev += eng.update(frame(clock.tick(), []))
+    assert names(ev) == ["hand.drag_end"]
+    assert not eng.state.dragging
+
+
+# --------------------------------------------------------------------------- two-hand zoom
+def two_open(clock, eng, gap, n=1):
+    out = []
+    for _ in range(n):
+        hands = [make_hand("open", x=0.5 - gap / 2, handedness="Left"),
+                 make_hand("open", x=0.5 + gap / 2, handedness="Right")]
+        out += eng.update(frame(clock.tick(), hands))
+    return out
+
+
+def test_spreading_two_open_hands_zooms_in_and_closing_zooms_out():
+    eng, clock = engine(), Clock()
+    two_open(clock, eng, 0.30, 6)
+    zin = []
+    for i in range(12):
+        zin += two_open(clock, eng, 0.30 + i * 0.02)
+    assert set(names(zin)) == {"hand.zoom_in"} and eng.state.mode == "zoom"
+    zout = []
+    for i in range(12):
+        zout += two_open(clock, eng, 0.52 - i * 0.02)
+    assert set(names(zout)) == {"hand.zoom_out"}
+
+
+def test_still_two_hands_do_not_zoom_pause_or_swipe():
+    eng, clock = engine(palm_hold_ms=600), Clock()
+    ev = two_open(clock, eng, 0.35, 60)  # two still open palms for 2 s
+    assert names(ev) == []
+
+
+def test_zoom_requires_both_hands_open():
+    eng, clock = engine(), Clock()
+    ev = []
+    for i in range(15):
+        hands = [make_hand("open", x=0.3 - i * 0.01, handedness="Left"),
+                 make_hand("point", x=0.7 + i * 0.01, handedness="Right")]
+        ev += eng.update(frame(clock.tick(), hands))
+    assert not [n for n in names(ev) if "zoom" in n]
+
+
+def test_zoom_disabled_setting():
+    eng, clock = engine(zoom_enabled=False), Clock()
+    two_open(clock, eng, 0.30, 6)
+    ev = []
+    for i in range(12):
+        ev += two_open(clock, eng, 0.30 + i * 0.02)
+    assert not [n for n in names(ev) if "zoom" in n]
+
+
+# --------------------------------------------------------------------------- three-finger swipes
+def test_three_finger_swipe_snaps_window_without_volume_change():
+    eng, clock = engine(), Clock()
+    feed(eng, clock, "three", 6, x=0.3)
+    ev = []
+    for i in range(9):
+        ev += feed(eng, clock, "three", x=0.3 + i * 0.045)
+    assert names(ev) == ["hand.three_swipe_right"]
+    eng, clock = engine(), Clock()
+    feed(eng, clock, "three", 6, x=0.7)
+    ev = []
+    for i in range(9):
+        ev += feed(eng, clock, "three", x=0.7 - i * 0.045)
+    assert names(ev) == ["hand.three_swipe_left"]

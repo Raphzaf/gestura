@@ -8,7 +8,7 @@ locally; no video is stored or uploaded.
 Primary target: **Windows 10/11 (x64)**. Built with Python, PySide6, MediaPipe
 and OpenCV.
 
-> **Status: early (v0.1.0).** All six milestones are implemented and covered by
+> **Status: early (v0.2.0).** All six milestones are implemented and covered by
 > automated tests, including on Windows in CI, but the app has **not yet been used
 > with a live webcam by a real user**. See [What has been verified](#what-has-been-verified).
 
@@ -24,12 +24,12 @@ and OpenCV.
 1. Sign in to GitHub (the repository is private, so downloads need an account with access).
 2. Open **[Releases](https://github.com/Raphzaf/gestura/releases/latest)**.
 3. Under **Assets**, download one of:
-   * **`Gestura-Setup-0.1.0.exe`**: installer (recommended), or
+   * **`Gestura-Setup-<version>.exe`**: installer (recommended), or
    * **`Gestura-windows-x64.zip`**: portable version, nothing to install.
 
 ### 2. Install
 
-* **Installer**: double-click `Gestura-Setup-0.1.0.exe` and follow the steps. It
+* **Installer**: double-click `Gestura-Setup-<version>.exe` and follow the steps. It
   installs for your user only (no admin rights) and adds Gestura to the Start menu
   (plus an optional desktop shortcut).
 * **Portable zip**: right-click the zip → **Extract All…**, open the extracted
@@ -59,9 +59,11 @@ other apps that use the camera (Teams, Zoom, the Camera app).
    try two fingers up/down to scroll, hold an open palm to pause. Watch each one
    appear in the Gesture Studio log.
 5. **Go live** — on the Dashboard switch **Test mode** off. Now:
-   * **Mouse mode** (on by default): index finger moves the cursor, pinch clicks,
-     thumb + middle pinch right-clicks, two fingers scroll, three fingers move up/down
-     to change the volume, a fist is a "clutch" to reposition your hand.
+   * **Mouse mode** (on by default): index finger moves the cursor, a quick pinch clicks,
+     pinch-and-hold drags (release to drop), thumb + middle pinch right-clicks, two
+     fingers scroll, three fingers up/down change the volume, a quick three-finger swipe
+     snaps the window left/right, two open hands spread/closed zoom, a fist is a
+     "clutch" to reposition your hand.
    * **Navigation mode**: turn on to go back/forward with head turns; nod twice to press Enter.
    * **Keyboard mode**: shows the floating keyboard; point at a key and pinch.
      Click the text field you want to type into first.
@@ -119,10 +121,13 @@ installer on Windows and publishes them as a GitHub Release named after the vers
 | Hand (Mouse mode) | Action |
 |---|---|
 | Index finger extended | Move cursor |
-| Thumb + index pinch | Left click (two quick pinches = double click) |
+| Thumb + index pinch | Left click on release (two quick pinches = double click) |
+| Thumb + index pinch, **hold** ½ s, move, release | Drag and drop (files, windows, sliders, selections) |
 | Thumb + middle pinch | Right click |
 | Index + middle extended, move up/down | Scroll (left/right: horizontal scroll) |
 | Index + middle + ring extended, move up/down | Volume up / down |
+| Three fingers, quick swipe left / right | Snap window to the left / right half (Win+← / Win+→) |
+| **Two** open hands, spread apart / bring together | Zoom in / out (Ctrl + wheel) |
 | Open palm swipe left / right | Previous / next tab |
 | Open palm held still (1.2 s) | Pause / resume |
 | Fist | Clutch — hand controls ignored while held |
@@ -135,8 +140,9 @@ installer on Windows and publishes them as a GitHub Release named after the vers
 | Return to neutral | Re-arms head gestures |
 
 Everything is remappable (Settings › Gesture mapping) and every threshold is
-configurable. Media commands (volume, mute, play/pause, next/previous track) can be
-assigned to any gesture — for example head tilts to change track. Details, measurements and false-trigger guards: [docs/GESTURES.md](docs/GESTURES.md).
+configurable. Media commands (volume, mute, play/pause, next/previous track) and window
+commands (maximize, minimize, show desktop, task view, snap) can be assigned to any
+gesture — for example head tilts to change track or show the desktop. Details, measurements and false-trigger guards: [docs/GESTURES.md](docs/GESTURES.md).
 
 ## Features
 
@@ -215,12 +221,12 @@ runs after you press Start (or enable auto-start). The MediaPipe models
 1. Connectez-vous à GitHub (le dépôt est privé : il faut un compte qui y a accès).
 2. Ouvrez la page **[Releases](https://github.com/Raphzaf/gestura/releases/latest)**.
 3. Dans **Assets**, téléchargez au choix :
-   * **`Gestura-Setup-0.1.0.exe`** : l'installateur (recommandé), ou
+   * **`Gestura-Setup-<version>.exe`** : l'installateur (recommandé), ou
    * **`Gestura-windows-x64.zip`** : la version portable, sans installation.
 
 ### 2. Installer
 
-* **Installateur** : double-cliquez sur `Gestura-Setup-0.1.0.exe` et suivez les étapes.
+* **Installateur** : double-cliquez sur `Gestura-Setup-<version>.exe` et suivez les étapes.
   Il s'installe pour votre compte uniquement (sans droits admin) et ajoute Gestura au
   menu Démarrer (raccourci bureau en option).
 * **Zip portable** : clic droit sur le zip → **Extraire tout…**, ouvrez le dossier
@@ -252,9 +258,12 @@ caméra*. Fermez les autres applications qui utilisent la caméra (Teams, Zoom, 
    Chaque geste apparaît dans le journal de Gesture Studio.
 5. **Passer en contrôle réel** : sur le Dashboard, désactivez **Test mode**. Ensuite :
    * **Mode souris** (Mouse mode, activé par défaut) : l'index déplace le curseur,
-     le pincement pouce + index clique, pouce + majeur fait un clic droit, deux doigts
-     font défiler, trois doigts (index, majeur, annulaire) montés ou descendus règlent le
-     volume, le poing fermé « débraye » pour repositionner la main.
+     un pincement rapide pouce + index clique, un pincement **maintenu** ½ seconde
+     attrape (glisser-déposer : déplacez la main puis relâchez pour déposer), pouce +
+     majeur fait un clic droit, deux doigts font défiler, trois doigts montés ou descendus
+     règlent le volume, un balayage rapide à trois doigts colle la fenêtre à gauche ou à
+     droite de l'écran, **deux mains ouvertes** qu'on écarte ou rapproche zooment, le
+     poing fermé « débraye » pour repositionner la main.
    * **Mode navigation** (Navigation mode) : tournez la tête pour page précédente /
      suivante ; hochez la tête deux fois pour valider (Entrée).
    * **Mode clavier** (Keyboard mode) : affiche le clavier flottant (AZERTY par défaut) ;

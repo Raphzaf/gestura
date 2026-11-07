@@ -31,6 +31,11 @@ _COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("mouse.double_click", "Double click", "Mouse"),
     CommandSpec("mouse.middle_click", "Middle click", "Mouse"),
     CommandSpec("mouse.scroll", "Scroll", "Mouse", continuous=True),
+    CommandSpec("mouse.drag_start", "Drag (hold left button)", "Mouse"),
+    CommandSpec("mouse.drag_end", "Drop (release left button)", "Mouse"),
+    # View
+    CommandSpec("view.zoom_in", "Zoom in (Ctrl + wheel)", "View"),
+    CommandSpec("view.zoom_out", "Zoom out (Ctrl + wheel)", "View"),
     # Browser / navigation
     CommandSpec("browser.back", "Previous page (Alt+Left)", "Navigation"),
     CommandSpec("browser.forward", "Next page (Alt+Right)", "Navigation"),
@@ -48,6 +53,13 @@ _COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("key.arrow_up", "Arrow up", "Keyboard"),
     CommandSpec("key.arrow_down", "Arrow down", "Keyboard"),
     CommandSpec("system.alt_tab", "Switch window (Alt+Tab)", "System"),
+    # Windows
+    CommandSpec("window.snap_left", "Snap window left (Win+←)", "Windows"),
+    CommandSpec("window.snap_right", "Snap window right (Win+→)", "Windows"),
+    CommandSpec("window.maximize", "Maximize window (Win+↑)", "Windows"),
+    CommandSpec("window.minimize", "Minimize window (Win+↓)", "Windows"),
+    CommandSpec("window.show_desktop", "Show desktop (Win+D)", "Windows"),
+    CommandSpec("window.task_view", "Task view (Win+Tab)", "Windows"),
     # Media (system-wide media keys)
     CommandSpec("media.volume_up", "Volume up", "Media"),
     CommandSpec("media.volume_down", "Volume down", "Media"),

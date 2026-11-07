@@ -9,14 +9,23 @@ Use **Gesture Studio** (with test mode on) to see exactly what the recogniser se
 | Gesture | Default action | How it is recognised |
 |---|---|---|
 | Index finger extended (other fingers folded) | Move cursor | Pose `point`, debounced over 3 frames; index fingertip mapped from the *active region* (grey rectangle) to the whole screen, smoothed with a One-Euro filter |
-| Thumb + index pinch | Left click | Thumb–index distance / palm size < 0.25 for 2 frames; re-opens above 0.38 (hysteresis). Fires once per pinch |
+| Thumb + index pinch | Left click | Thumb–index distance / palm size < 0.25 for 2 frames; re-opens above 0.38 (hysteresis). The click fires when the pinch **opens** (so a held pinch can become a drag); with `drag_enabled` off it fires on close |
+| Thumb + index pinch held ≥ 450 ms | Drag and drop | The left button goes down where the cursor was aimed (the cursor is frozen while pinching), the cursor then follows the hand while pinched, and opening the pinch releases the button. Losing the hand, pausing, stopping or the emergency stop always release it |
 | Two quick pinches | Double click | Second pinch within 450 ms. Executed as two clicks, exactly like a mouse, so the OS forms the double click |
 | Thumb + middle pinch | Right click | Same thresholds on thumb–middle; 600 ms cooldown |
 | Index + middle extended, move hand up/down | Scroll | Pose `two_fingers`; vertical hand motion → wheel notches (hand up = scroll up). Dominant-axis only; horizontal motion scrolls horizontally |
+| Two open hands, spread apart / bring together | Zoom in / out | Both hands in pose `open_palm` (debounced); the distance between palm centres is smoothed and turned into steps, 12 per frame-width, max 2 per frame. Each step is Ctrl + one wheel notch, which zooms in browsers, PDF / photo viewers, Office and maps on any keyboard layout. One-palm gestures (pause, swipes) are suspended while zooming and for 1 s after |
+| Three fingers, quick horizontal swipe | Snap window left / right | Same swipe rules as the open palm (distance, duration, monotonic, mostly horizontal); sends Win+← / Win+→. Volume only reacts to mostly-vertical motion, so a swipe never changes the volume |
 | Index + middle + ring extended, move hand up/down | Volume up / down | Pose `three_fingers` (pinky folded); vertical motion is accumulated into steps, 30 steps per frame height (each step = one system volume key press, 2 % on Windows), at most 3 steps per frame; same dead zone as scrolling |
 | Open palm, fast horizontal swipe | Previous / next tab | Palm centre travels > 22 % of frame width within 350 ms, ≥70 % of steps in the same direction, mostly horizontal; 1 s cooldown |
 | Open palm held still | Pause / resume | Pose `open_palm` held for 1.2 s while the palm moves < 0.35 frame-widths/s; 2 s cooldown; must leave the pose before it can fire again |
 | Fist | Clutch (do nothing) | While a fist is held, the hand produces no events — use it to reposition your hand |
+
+### Window commands
+
+`Snap window left/right` (Win+←/→), `Maximize` (Win+↑), `Minimize` (Win+↓),
+`Show desktop` (Win+D) and `Task view` (Win+Tab) can be assigned to any gesture.
+Closing windows is deliberately not offered: it can lose work.
 
 ### Media commands
 
