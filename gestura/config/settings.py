@@ -74,6 +74,8 @@ class HandGestureSettings(_Section):
     scroll_speed: float = Field(25.0, ge=1.0, le=200.0, title="Scroll speed (notches per hand height)")
     scroll_dead_zone: float = Field(0.004, ge=0.0, le=0.05, title="Scroll dead zone (per frame)")
     scroll_invert: bool = Field(False, title="Invert scroll direction")
+    volume_steps: float = Field(30.0, ge=5.0, le=100.0, title="Volume steps per hand height (three fingers)")
+    volume_max_steps_per_frame: int = Field(3, ge=1, le=10, title="Max volume steps per frame")
     swipe_min_distance: float = Field(0.22, ge=0.05, le=0.8, title="Swipe min distance (frame width)")
     swipe_window_ms: int = Field(350, ge=100, le=1500, title="Swipe max duration (ms)")
     swipe_cooldown_ms: int = Field(1000, ge=200, le=5000, title="Swipe cooldown (ms)")
@@ -144,6 +146,8 @@ class HandGesture(str, Enum):
     SWIPE_LEFT = "hand.swipe_left"
     SWIPE_RIGHT = "hand.swipe_right"
     PALM_HOLD = "hand.palm_hold"
+    VOLUME_UP = "hand.volume_up"
+    VOLUME_DOWN = "hand.volume_down"
 
 
 class HeadGesture(str, Enum):
@@ -163,6 +167,8 @@ DEFAULT_HAND_MAPPINGS: dict[str, str] = {
     HandGesture.SWIPE_LEFT.value: "browser.prev_tab",
     HandGesture.SWIPE_RIGHT.value: "browser.next_tab",
     HandGesture.PALM_HOLD.value: "app.toggle_pause",
+    HandGesture.VOLUME_UP.value: "media.volume_up",
+    HandGesture.VOLUME_DOWN.value: "media.volume_down",
 }
 
 DEFAULT_HEAD_MAPPINGS: dict[str, str] = {

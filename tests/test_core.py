@@ -90,6 +90,19 @@ def test_active_engine_executes_mapped_commands():
     assert be.named("move_to") and ("scroll", 2) in be.calls
 
 
+def test_volume_gestures_press_media_keys():
+    eng, safety, be, _ = rig()
+    safety.start()
+    eng.handle(ev("hand.volume_up"))
+    eng.handle(ev("hand.volume_down"))
+    assert ("press", "volumeup") in be.calls and ("press", "volumedown") in be.calls
+    eng.set_mapping({"head.roll_left": "media.prev_track", "head.roll_right": "media.next_track",
+                     "hand.swipe_left": "media.mute", "hand.swipe_right": "media.play_pause"})
+    for g in ("head.roll_left", "head.roll_right", "hand.swipe_left", "hand.swipe_right"):
+        assert eng.handle(ev(g)).executed
+    assert [c[1] for c in be.named("press")][-4:] == ["prevtrack", "nexttrack", "volumemute", "playpause"]
+
+
 def test_test_mode_simulates_without_touching_the_os():
     eng, safety, be, _ = rig(test_mode=True)
     safety.start()

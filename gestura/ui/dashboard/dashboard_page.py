@@ -85,7 +85,7 @@ class DashboardPage(QWidget):
         modes = Card("Operating modes")
         m = app.settings.modes
         self.mode_rows = {
-            "mouse": ToggleRow("Mouse mode", "Index finger moves the cursor, pinch clicks, two fingers scroll.", m.mouse),
+            "mouse": ToggleRow("Mouse mode", "Index finger moves the cursor, pinch clicks, two fingers scroll, three fingers change the volume.", m.mouse),
             "navigation": ToggleRow("Navigation mode", "Turn head for back / forward, nod to confirm.", m.navigation),
             "keyboard": ToggleRow("Keyboard mode", "Floating on-screen keyboard; select keys with the hand cursor.", m.keyboard),
         }

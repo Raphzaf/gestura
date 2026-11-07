@@ -60,8 +60,8 @@ other apps that use the camera (Teams, Zoom, the Camera app).
    appear in the Gesture Studio log.
 5. **Go live** — on the Dashboard switch **Test mode** off. Now:
    * **Mouse mode** (on by default): index finger moves the cursor, pinch clicks,
-     thumb + middle pinch right-clicks, two fingers scroll, a fist is a "clutch"
-     to reposition your hand.
+     thumb + middle pinch right-clicks, two fingers scroll, three fingers move up/down
+     to change the volume, a fist is a "clutch" to reposition your hand.
    * **Navigation mode**: turn on to go back/forward with head turns; nod twice to press Enter.
    * **Keyboard mode**: shows the floating keyboard; point at a key and pinch.
      Click the text field you want to type into first.
@@ -122,6 +122,7 @@ installer on Windows and publishes them as a GitHub Release named after the vers
 | Thumb + index pinch | Left click (two quick pinches = double click) |
 | Thumb + middle pinch | Right click |
 | Index + middle extended, move up/down | Scroll (left/right: horizontal scroll) |
+| Index + middle + ring extended, move up/down | Volume up / down |
 | Open palm swipe left / right | Previous / next tab |
 | Open palm held still (1.2 s) | Pause / resume |
 | Fist | Clutch — hand controls ignored while held |
@@ -134,7 +135,8 @@ installer on Windows and publishes them as a GitHub Release named after the vers
 | Return to neutral | Re-arms head gestures |
 
 Everything is remappable (Settings › Gesture mapping) and every threshold is
-configurable. Details, measurements and false-trigger guards: [docs/GESTURES.md](docs/GESTURES.md).
+configurable. Media commands (volume, mute, play/pause, next/previous track) can be
+assigned to any gesture — for example head tilts to change track. Details, measurements and false-trigger guards: [docs/GESTURES.md](docs/GESTURES.md).
 
 ## Features
 
@@ -251,7 +253,8 @@ caméra*. Fermez les autres applications qui utilisent la caméra (Teams, Zoom, 
 5. **Passer en contrôle réel** : sur le Dashboard, désactivez **Test mode**. Ensuite :
    * **Mode souris** (Mouse mode, activé par défaut) : l'index déplace le curseur,
      le pincement pouce + index clique, pouce + majeur fait un clic droit, deux doigts
-     font défiler, le poing fermé « débraye » pour repositionner la main.
+     font défiler, trois doigts (index, majeur, annulaire) montés ou descendus règlent le
+     volume, le poing fermé « débraye » pour repositionner la main.
    * **Mode navigation** (Navigation mode) : tournez la tête pour page précédente /
      suivante ; hochez la tête deux fois pour valider (Entrée).
    * **Mode clavier** (Keyboard mode) : affiche le clavier flottant (AZERTY par défaut) ;

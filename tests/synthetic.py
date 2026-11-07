@@ -72,6 +72,8 @@ def pose_world(pose: str) -> np.ndarray:
                           thumb_tip=w[11] + np.array([0.0, 0.0, -0.012]))
     if pose == "two":
         return make_world({"ring": CURLED, "pinky": CURLED})
+    if pose == "three":
+        return make_world({"pinky": CURLED})
     if pose == "pinch":
         w = make_world({"index": HALF, "middle": CURLED, "ring": CURLED, "pinky": CURLED})
         return make_world({"index": HALF, "middle": CURLED, "ring": CURLED, "pinky": CURLED},

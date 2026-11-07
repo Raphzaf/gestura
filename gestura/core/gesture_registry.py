@@ -48,6 +48,13 @@ _COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("key.arrow_up", "Arrow up", "Keyboard"),
     CommandSpec("key.arrow_down", "Arrow down", "Keyboard"),
     CommandSpec("system.alt_tab", "Switch window (Alt+Tab)", "System"),
+    # Media (system-wide media keys)
+    CommandSpec("media.volume_up", "Volume up", "Media"),
+    CommandSpec("media.volume_down", "Volume down", "Media"),
+    CommandSpec("media.mute", "Mute / unmute", "Media"),
+    CommandSpec("media.play_pause", "Play / pause media", "Media"),
+    CommandSpec("media.next_track", "Next track", "Media"),
+    CommandSpec("media.prev_track", "Previous track", "Media"),
     # App control
     CommandSpec("app.toggle_pause", "Pause / resume Gestura", "Gestura", control=True),
     CommandSpec("app.emergency_stop", "Emergency stop", "Gestura", control=True),

@@ -237,3 +237,50 @@ def test_moving_palm_does_not_pause():
     for i in range(80):
         ev += feed(eng, clock, "open", x=0.5 + 0.12 * np.sin(i / 3))
     assert "hand.palm_hold" not in names(ev)
+
+
+# --------------------------------------------------------------------------- volume
+def test_three_fingers_pose():
+    assert compute(make_hand("three")).pose == Pose.THREE
+
+
+def test_three_fingers_up_raises_volume_down_lowers_it():
+    eng, clock = engine(), Clock()
+    feed(eng, clock, "three", 6, y=0.6)
+    up = []
+    for i in range(12):  # hand moves up 0.12 frame heights
+        up += feed(eng, clock, "three", y=0.6 - i * 0.01)
+    assert set(names(up)) == {"hand.volume_up"}
+    assert 2 <= names(up).count("hand.volume_up") <= 0.12 * 30 + 1
+    down = []
+    for i in range(12):
+        down += feed(eng, clock, "three", y=0.49 + i * 0.01)
+    assert set(names(down)) == {"hand.volume_down"}
+    assert eng.state.mode == "volume"
+
+
+def test_still_three_fingers_and_other_poses_do_not_change_volume():
+    eng, clock = engine(), Clock()
+    ev = feed(eng, clock, "three", 40, y=0.6)  # still hand
+    assert not [n for n in names(ev) if "volume" in n]
+    eng, clock = engine(), Clock()
+    ev = []
+    for i in range(15):  # same motion with two fingers scrolls instead
+        ev += feed(eng, clock, "two", y=0.6 - i * 0.01)
+    assert not [n for n in names(ev) if "volume" in n]
+
+
+def test_volume_steps_are_capped_per_frame_and_no_backlog():
+    eng, clock = engine(volume_max_steps_per_frame=2), Clock()
+    feed(eng, clock, "three", 6, y=0.7)
+    jump = feed(eng, clock, "three", y=0.4)  # huge jump in one frame
+    assert names(jump).count("hand.volume_up") <= 2
+    after = feed(eng, clock, "three", 10, y=0.4)  # hand now still: smoothing settles, no backlog burst
+    assert names(after).count("hand.volume_up") <= 6
+
+
+def test_switching_three_to_open_palm_does_not_change_volume():
+    eng, clock = engine(), Clock()
+    feed(eng, clock, "three", 8, y=0.6)
+    ev = feed(eng, clock, "open", 20, y=0.6)
+    assert not [n for n in names(ev) if "volume" in n]

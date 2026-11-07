@@ -16,6 +16,7 @@ POINT (index extended)            -> hand.cursor (continuous, smoothed)
 thumb+index pinch                 -> hand.pinch (count=1, or 2 for a quick second pinch)
 thumb+middle pinch                -> hand.middle_pinch
 TWO (index+middle extended) move  -> hand.scroll (continuous, dx/dy in notches)
+THREE (index+middle+ring) up/down -> hand.volume_up / hand.volume_down (one event per step)
 OPEN palm, fast horizontal move   -> hand.swipe_left / hand.swipe_right
 OPEN palm held still              -> hand.palm_hold
 FIST                              -> clutch (nothing)
@@ -88,7 +89,7 @@ class HandState:
     pose: Pose = Pose.NONE
     raw_pose: Pose = Pose.NONE
     features: HandFeatures | None = None
-    mode: str = "idle"  # idle | cursor | scroll | palm | clutch
+    mode: str = "idle"  # idle | cursor | scroll | volume | palm | clutch
     cursor_frame: tuple[float, float] | None = None  # smoothed anchor, frame coords
     cursor_screen: tuple[float, float] | None = None  # 0..1 screen coords
     frozen: bool = False
@@ -102,6 +103,9 @@ class HandGestureEngine:
     def __init__(self, hand: HandGestureSettings, cursor: CursorSettings, tracking: TrackingSettings) -> None:
         self._cursor_filter = OneEuro2D()
         self._scroll_filter = OneEuro2D(min_cutoff=3.0, beta=0.0)
+        self._volume_filter = OneEuro2D(min_cutoff=3.0, beta=0.0)
+        self._prev_volume: float | None = None
+        self._volume_acc = 0.0
         self._pose = Debounced(Pose.NONE, 3)
         self._left = _Pinch()
         self._right = _Pinch()
@@ -141,6 +145,9 @@ class HandGestureEngine:
         self._palm_latched = False
         self._palm_hist.clear()
         self._prev_scroll = None
+        self._volume_filter.reset()
+        self._prev_volume = None
+        self._volume_acc = 0.0
         self._cursor_active = False
         self._handedness = None
         self.state = HandState()
@@ -278,6 +285,31 @@ class HandGestureEngine:
         else:
             self._prev_scroll = None
             self._scroll_filter.reset()
+
+        # ---- volume: three fingers, vertical movement; each step is one volume key press
+        if pose == Pose.THREE and not clutch and not pinching:
+            mode = "volume"
+            _, vy = self._volume_filter(f.two_tip[0], f.two_tip[1], now)
+            if self._prev_volume is not None:
+                dy = vy - self._prev_volume
+                if abs(dy) > hs.scroll_dead_zone:
+                    self._volume_acc += -dy * hs.volume_steps  # hand up -> louder
+                steps = 0
+                while self._volume_acc >= 1 and steps < hs.volume_max_steps_per_frame:
+                    self._volume_acc -= 1
+                    steps += 1
+                    events.append(GestureEvent(HandGesture.VOLUME_UP.value, now, {}, "Volume up"))
+                while self._volume_acc <= -1 and steps < hs.volume_max_steps_per_frame:
+                    self._volume_acc += 1
+                    steps += 1
+                    events.append(GestureEvent(HandGesture.VOLUME_DOWN.value, now, {}, "Volume down"))
+                # Don't bank a long backlog: excess movement beyond the per-frame cap is dropped.
+                self._volume_acc = max(-0.999, min(0.999, self._volume_acc))
+            self._prev_volume = vy
+        else:
+            self._prev_volume = None
+            self._volume_acc = 0.0
+            self._volume_filter.reset()
 
         # ---- open palm: swipe and hold
         palm_progress = 0.0

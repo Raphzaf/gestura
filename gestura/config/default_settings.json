@@ -48,6 +48,8 @@
     "scroll_speed": 25.0,
     "scroll_dead_zone": 0.004,
     "scroll_invert": false,
+    "volume_steps": 30.0,
+    "volume_max_steps_per_frame": 3,
     "swipe_min_distance": 0.22,
     "swipe_window_ms": 350,
     "swipe_cooldown_ms": 1000,
@@ -108,7 +110,9 @@
       "hand.scroll": "mouse.scroll",
       "hand.swipe_left": "browser.prev_tab",
       "hand.swipe_right": "browser.next_tab",
-      "hand.palm_hold": "app.toggle_pause"
+      "hand.palm_hold": "app.toggle_pause",
+      "hand.volume_up": "media.volume_up",
+      "hand.volume_down": "media.volume_down"
     },
     "head": {
       "head.turn_left": "browser.back",

@@ -34,6 +34,8 @@ GESTURE_LABELS = {
     "hand.middle_pinch": "Thumb + middle pinch", "hand.scroll": "Two fingers, move hand",
     "hand.swipe_left": "Open palm swipe left", "hand.swipe_right": "Open palm swipe right",
     "hand.palm_hold": "Open palm held still",
+    "hand.volume_up": "Three fingers, move up",
+    "hand.volume_down": "Three fingers, move down",
     "head.turn_left": "Turn head left", "head.turn_right": "Turn head right",
     "head.nod_down": "Nod down", "head.tilt_up": "Tilt head up",
     "head.roll_left": "Tilt head to left shoulder", "head.roll_right": "Tilt head to right shoulder",

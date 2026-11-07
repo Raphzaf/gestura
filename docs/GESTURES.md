@@ -13,9 +13,18 @@ Use **Gesture Studio** (with test mode on) to see exactly what the recogniser se
 | Two quick pinches | Double click | Second pinch within 450 ms. Executed as two clicks, exactly like a mouse, so the OS forms the double click |
 | Thumb + middle pinch | Right click | Same thresholds on thumb–middle; 600 ms cooldown |
 | Index + middle extended, move hand up/down | Scroll | Pose `two_fingers`; vertical hand motion → wheel notches (hand up = scroll up). Dominant-axis only; horizontal motion scrolls horizontally |
+| Index + middle + ring extended, move hand up/down | Volume up / down | Pose `three_fingers` (pinky folded); vertical motion is accumulated into steps, 30 steps per frame height (each step = one system volume key press, 2 % on Windows), at most 3 steps per frame; same dead zone as scrolling |
 | Open palm, fast horizontal swipe | Previous / next tab | Palm centre travels > 22 % of frame width within 350 ms, ≥70 % of steps in the same direction, mostly horizontal; 1 s cooldown |
 | Open palm held still | Pause / resume | Pose `open_palm` held for 1.2 s while the palm moves < 0.35 frame-widths/s; 2 s cooldown; must leave the pose before it can fire again |
 | Fist | Clutch (do nothing) | While a fist is held, the hand produces no events — use it to reposition your hand |
+
+### Media commands
+
+`Volume up`, `Volume down`, `Mute / unmute`, `Play / pause media`, `Next track` and
+`Previous track` send the standard multimedia keys, so they work with the Windows
+volume, Spotify, browsers (YouTube, Netflix…), VLC and any app that honours media keys.
+Assign them to any gesture in Settings › Gesture mapping; head tilts to the shoulders
+(unmapped by default) are a good fit for next / previous track.
 
 ### How poses are computed
 

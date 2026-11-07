@@ -34,7 +34,10 @@ def register_executors(
     r("system.alt_tab", lambda e: nav.switch_window())
     for cmd, key in (("key.enter", "enter"), ("key.escape", "esc"), ("key.tab", "tab"),
                      ("key.space", "space"), ("key.arrow_left", "left"), ("key.arrow_right", "right"),
-                     ("key.arrow_up", "up"), ("key.arrow_down", "down")):
+                     ("key.arrow_up", "up"), ("key.arrow_down", "down"),
+                     ("media.volume_up", "volumeup"), ("media.volume_down", "volumedown"),
+                     ("media.mute", "volumemute"), ("media.play_pause", "playpause"),
+                     ("media.next_track", "nexttrack"), ("media.prev_track", "prevtrack")):
         r(cmd, lambda e, k=key: keyboard.press(k))
     for cmd, action in (app_actions or {}).items():
         r(cmd, lambda e, a=action: a())

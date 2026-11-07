@@ -37,6 +37,7 @@ class Pose(str, enum.Enum):
     FIST = "fist"
     POINT = "point"
     TWO = "two_fingers"
+    THREE = "three_fingers"
     OTHER = "other"
 
 
@@ -74,6 +75,8 @@ def classify(extended: tuple[bool, ...], curled: tuple[bool, ...]) -> Pose:
         return Pose.POINT
     if i and m and cr and cp:
         return Pose.TWO
+    if i and m and r and cp:
+        return Pose.THREE
     return Pose.OTHER
 
 
