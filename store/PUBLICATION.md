@@ -195,8 +195,14 @@ Résultat dans `store\out\` :
 
 ## Étape 5 — Préparer les images (30 min)
 
-- ☐ **4 à 6 captures d'écran** en PNG, **1920 × 1080** de préférence (au moins
-  1366 × 768), prises avec Win + Maj + S ou Impr. écran :
+- ✅ **Logos du Store** (exigés dans les métadonnées), déjà générés dans
+  [`store/listing/art/`](listing/art/) (`python scripts/store_art.py` pour les refaire) :
+  - `poster_art_1440x2160.png` → **Affiche 2:3** (logo principal sous Windows 10/11)
+  - `box_art_2160x2160.png` → **Boîte 1:1**
+  - `app_tile_300x300.png` → **Icône de vignette 1:1** (si le champ est proposé)
+- ☐ **Captures d'écran** (**obligatoire** : au moins 1, Microsoft en recommande
+  4 ou plus) en PNG, **1920 × 1080** de préférence (au moins 1366 × 768), prises avec
+  Win + Maj + S ou Impr. écran sur la version de test installée :
   1. Tableau de bord avec l'aperçu de la caméra et la main détectée
   2. Gesture Studio (squelette de la main affiché)
   3. Clavier virtuel au-dessus du Bloc-notes
@@ -205,55 +211,77 @@ Résultat dans `store\out\` :
 - ☐ Vérifier qu'aucune information personnelle n'apparaît (notifications, onglets,
   noms de fichiers). Ton visage apparaît dans l'aperçu : cadre la caméra sur la main
   si tu préfères.
-- ☐ Facultatif : une **courte vidéo** (30 à 60 s) ; le film de lancement de
+- ☐ Facultatif : une **bande-annonce** (30 à 60 s) ; le film de lancement de
   `promo/launch_film` peut servir de base.
 
 ## Étape 6 — Remplir la soumission dans Partner Center (1 h)
 
+Page de l'application > *Mise en production du produit* > **Démarrer la soumission**.
+Les sections peuvent être remplies dans n'importe quel ordre ; Partner Center signale
+ce qui manque avant l'envoi. (Champs vérifiés sur la page Microsoft Learn « Créer une
+soumission d'application pour votre application MSIX », mise à jour en 2026.)
+
 ### Tarification et disponibilité
-- ☐ Marchés : tous (ou au minimum France, Belgique, Suisse, Canada, Union européenne,
-  États-Unis, Royaume-Uni)
-- ☐ Visibilité : publique
-- ☐ **Prix : 12,99 €** — Partner Center propose des paliers de prix ; choisir le
-  palier le plus proche et vérifier le prix affiché pour la France
-- ☐ **Essai gratuit : aucun.** La version gratuite de GitHub joue ce rôle ; un essai
+- ☐ **Marchés** (obligatoire) : laisser *tous les marchés possibles*
+- ☐ **Public ciblé** (obligatoire) : *public*
+- ☐ **Découvrabilité** (obligatoire) : *disponible et détectable dans le Microsoft Store*
+- ☐ **Planification** (obligatoire) : *dès que possible* ; arrêt de l'acquisition :
+  *jamais*. Pour choisir toi-même le jour de sortie, voir « Options de soumission »
+- ☐ **Prix de base** (obligatoire) : **12,99 €**. Partner Center propose des paliers de
+  prix : choisir le plus proche et vérifier le prix affiché pour la France
+- ☐ **Essai gratuit** : *aucun*. La version gratuite de GitHub joue ce rôle ; un essai
   limité dans le temps demanderait du code en plus
-- ☐ Publication : **manuelle** après certification (pour choisir le jour)
+- ☐ **Prix de vente** (promotions) et **licences organisationnelles** : laisser par
+  défaut pour l'instant
 
 ### Propriétés
-- ☐ Catégorie : **Utilitaires et outils** (ou Productivité)
-- ☐ URL de la politique de confidentialité :
-  `https://github.com/Raphzaf/gestura/blob/main/PRIVACY.md`
-- ☐ Site web : `https://github.com/Raphzaf/gestura`
-- ☐ Contact du support : `https://github.com/Raphzaf/gestura/issues` (ou une adresse
-  e-mail dédiée : elle sera publique)
-- ☐ Configuration requise : **Caméra** en « minimum » ; souris et clavier non requis
-- ☐ Ne **pas** cocher « testé pour respecter les règles d'accessibilité » sans test
-  formel
+- ☐ **Catégorie** (obligatoire) : **Utilitaires et outils** (ou Productivité)
+- ☐ **URL de la politique de confidentialité** : obligatoire seulement si l'application
+  collecte ou transmet des informations personnelles, ce que Gestura ne fait pas.
+  **La remplir quand même** (la webcam inquiète, et Microsoft la cite parmi les
+  métadonnées attendues) : `https://github.com/Raphzaf/gestura/blob/main/PRIVACY.md`
+- ☐ **Site web** : `https://github.com/Raphzaf/gestura`
+- ☐ **Coordonnées du support** (obligatoire seulement pour Xbox) :
+  `https://github.com/Raphzaf/gestura/issues`, ou une adresse e-mail dédiée (elle sera
+  publique)
+- ☐ **Configuration requise** (facultatif, recommandé) : **Caméra** en « minimum »
+- ☐ **Déclarations de produit** : ne **pas** cocher « testé pour respecter les règles
+  d'accessibilité » sans test formel
 
-### Classification par âge
-- ☐ Questionnaire IARC : catégorie utilitaire ; aucune violence, aucun contenu
-  généré par d'autres utilisateurs, aucun partage de position, aucun achat dans
-  l'application → classification attendue : **3+**
+### Évaluations de l'âge
+- ☐ **Toutes les questions** (obligatoire) : catégorie utilitaire ; aucune violence,
+  aucun contenu généré par d'autres utilisateurs, aucun partage de position, aucun
+  achat dans l'application → classification attendue : **3+**
 
-### Paquets
-- ☐ Envoyer `store\out\Gestura_0.3.0.0_x64.msix` (**le non signé**)
-- ☐ Famille d'appareils : **Windows 10/11 Desktop** uniquement
+### Packages
+- ☐ **Package de l'application** (obligatoire) : envoyer `Gestura_0.3.0.0_x64.msix`
+  (**le non signé**, pas la copie `test-signed`)
+- ☐ **Disponibilité de la famille d'appareils** : **Windows 10/11 Desktop** uniquement
+  (décocher Xbox, HoloLens, etc. s'ils sont proposés)
+- La section reste « Incomplète » tant que tous ses champs ne sont pas remplis, même
+  si le paquet affiche « Validé » : c'est normal.
 
-### Fiches du Store (FR et EN)
-- ☐ Copier description, description courte, fonctionnalités, nouveautés et termes
-  de recherche depuis [`store/listing.md`](listing.md)
-- ☐ Ajouter les captures de l'étape 5
+### Descriptions du Store (FR et EN)
+Une fiche par langue, depuis [`store/listing.md`](listing.md) :
+- ☐ **Description** (obligatoire)
+- ☐ **Nouveautés de cette version**, **Fonctionnalités de l'application**,
+  **Mots clés** (facultatifs, recommandés)
+- ☐ **Captures d'écran** (obligatoire) et **logos du Store** (étape 5)
+- ☐ **Droits d'auteur et marques**, **Termes de licence supplémentaires**,
+  **Développé par** : textes prêts dans `store/listing.md` (la mention de la GPL v3
+  y est importante)
 
 ### Options de soumission
-- ☐ **Capacités restreintes** : coller la justification de `runFullTrust` depuis
-  `store/listing.md`
-- ☐ **Notes pour la certification** : coller le bloc prévu dans `store/listing.md`
+- ☐ **Fonctionnalités restreintes** (**obligatoire**, car le paquet déclare
+  `runFullTrust`) : coller la justification depuis `store/listing.md`
+- ☐ **Notes de certification** : coller le bloc prévu dans `store/listing.md`
+- ☐ **Options de suspension de publication** : *publier manuellement* si tu veux
+  choisir le jour de sortie après la certification
 
 ### Envoi
-- ☐ *Soumettre pour la certification*. Délai indicatif : jusqu'à quelques jours
-  ouvrés. En cas de refus, Microsoft envoie un rapport qui indique la règle en cause :
-  corriger, renvoyer.
+- ☐ Page de l'application > **Envoyer pour la certification**. L'état passe à « En
+  certification » ; délai indicatif : quelques jours ouvrés. En cas de refus,
+  Microsoft envoie un rapport qui indique la règle en cause : corriger, renvoyer.
 
 ## Étape 7 — Après la publication : rendre le tout le plus passif possible
 
@@ -280,6 +308,6 @@ Résultat dans `store\out\` :
 | 2. Compte développeur, paiement, fiscalité | Toi | 30 min + vérification |
 | 3. Réservation du nom, identité | ✅ fait | — |
 | 4. Build (GitHub) et tests sur ton PC | Toi | 30 min |
-| 5. Captures d'écran | Toi | 30 min |
+| 5. Logos (✅ faits) et captures d'écran | Toi | 30 min |
 | 6. Soumission | Toi | 1 h + certification |
 | 7. Automatisation des mises à jour | Toi | 30 min |

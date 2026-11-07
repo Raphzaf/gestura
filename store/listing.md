@@ -80,7 +80,7 @@ deux mains, gestion des fenêtres, réglage du volume.
 7. 100 % local : aucune image enregistrée ni envoyée
 8. Logiciel libre (GPL v3)
 
-### Termes de recherche (7 au maximum)
+### Mots clés (7 au maximum)
 gestes · webcam · souris sans les mains · contrôle gestuel · accessibilité · clavier virtuel · mains libres
 
 ### Configuration requise (texte libre)
@@ -157,12 +157,31 @@ management, volume control.
 7. 100% local: no image saved or sent
 8. Free software (GPL v3)
 
-### Search terms (7 max)
+### Keywords (7 max)
 gesture control · webcam mouse · hands-free · touchless · accessibility · virtual keyboard · head tracking
 
 ### System requirements (free text)
 Windows 10 (version 1809 or later) or Windows 11, 64-bit · webcam · about 1.5 GB of
 disk space.
+
+---
+
+## Champs communs aux deux langues
+
+### Droits d'auteur et informations sur les marques
+```
+© 2026 RaphZaf et les contributeurs de Gestura. Logiciel libre sous licence GNU GPL v3 ou ultérieure.
+```
+
+### Termes du contrat de licence supplémentaires
+```
+Gestura is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. It is distributed WITHOUT ANY WARRANTY. Full license: https://github.com/Raphzaf/gestura/blob/main/LICENSE — Source code: https://github.com/Raphzaf/gestura
+```
+
+### Développé par
+```
+RaphZaf
+```
 
 ---
 
