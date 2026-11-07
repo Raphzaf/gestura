@@ -77,9 +77,48 @@ Fichiers utiles :
   | Package/Properties/PublisherDisplayName | `GESTURA_STORE_PUBLISHER_DISPLAY_NAME` |
   | ID Store (`9N…`) | `MSSTORE_PRODUCT_ID` (seulement pour l'envoi automatique, étape 7) |
 
-## Étape 4 — Construire et tester le paquet sur ton PC Windows (1 à 2 h)
+## Étape 4 — Construire et tester le paquet (30 min)
 
-### 4.1 Installer les outils (une seule fois)
+Identité du paquet de Gestura (Partner Center > Identité du produit) :
+
+| Champ | Valeur |
+|---|---|
+| Package/Identity/Name | `RaphZaf.Gestura` |
+| Package/Identity/Publisher | `CN=6E503161-3688-4B42-BF41-89B48D3EC8F0` |
+| PublisherDisplayName | `RaphZaf` |
+| ID Store | `9N969KZPH44B` |
+
+Ces valeurs ne sont pas secrètes (elles figurent dans chaque paquet publié) : elles sont
+déjà les valeurs par défaut du workflow GitHub.
+
+### Option A (recommandée) — GitHub construit le paquet, sans rien installer
+
+1. ☐ GitHub > **Actions** > **Microsoft Store** > **Run workflow** (laisser
+   *test_signed* coché, *submit* décoché) > **Run workflow**. Durée : 15 à 25 min.
+2. ☐ À la fin, ouvrir l'exécution et télécharger l'artefact **Gestura-msix** (en bas
+   de la page), puis extraire le zip. Il contient :
+   - `Gestura_0.3.0.0_x64.msix` → **le fichier à envoyer au Store** (étape 6) ;
+   - `Gestura_0.3.0.0_x64_test-signed.msix` → la copie à installer sur ton PC ;
+   - `Gestura-test-certificate.cer` → le certificat de cette copie.
+3. ☐ Faire confiance au certificat de test (une fois par build) : clic droit sur
+   **Démarrer** > **Terminal (administrateur)**, aller dans le dossier extrait, puis :
+   ```powershell
+   Import-Certificate -FilePath .\Gestura-test-certificate.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+   ```
+   (Ou : double-clic sur le `.cer` > *Installer le certificat* > *Ordinateur local* >
+   *Placer tous les certificats dans le magasin suivant* > **Personnes autorisées**.)
+4. ☐ Double-clic sur `Gestura_0.3.0.0_x64_test-signed.msix` > **Installer**.
+5. ☐ Faire les tests de la section 4.4 ci-dessous.
+
+La clé privée de ce certificat est détruite à la fin du build : personne ne peut
+signer autre chose avec. Une fois les tests finis, tu peux le retirer
+(`certlm.msc` > Personnes autorisées > Certificats > « Gestura test (CI) » > Supprimer).
+
+### Option B — tout construire sur ton PC
+
+Utile seulement si tu veux modifier le code et le tester sans passer par GitHub.
+
+#### B.1 Installer les outils (une seule fois)
 - ☐ Python 3.12 (python.org, cocher « Add to PATH ») et Git
 - ☐ **Windows SDK** (fournit `makeappx`, `signtool` et le kit de certification) :
   installateur autonome du Windows 10/11 SDK sur le site de Microsoft
@@ -95,13 +134,13 @@ copy store\.env.example store\.env
 notepad store\.env
 ```
 
-Dans `store\.env`, remplis les trois variables `GESTURA_STORE_*` de l'étape 3, puis :
+Dans `store\.env`, remplis les trois variables `GESTURA_STORE_*` (tableau ci-dessus), puis :
 
 ```powershell
 python store\build_store.py --check
 ```
 
-### 4.2 Créer un certificat de test (une seule fois)
+#### B.2 Créer un certificat de test (une seule fois)
 Il sert **uniquement** à installer le paquet sur ton PC avant l'envoi. Le Store signe
 lui-même le paquet final. Dans PowerShell, en remplaçant `CN=…` par **exactement** ta
 valeur `GESTURA_STORE_PUBLISHER` :
@@ -127,7 +166,7 @@ Puis, dans `store\.env` :
 `GESTURA_SIGN_CERT_PASSWORD=<le mot de passe>`.
 Le certificat reste **hors du dépôt** (et `*.pfx` est de toute façon ignoré par git).
 
-### 4.3 Construire, installer, tester
+#### B.3 Construire et installer
 
 ```powershell
 python store\build_store.py --sign
@@ -137,7 +176,9 @@ Résultat dans `store\out\` :
 - `Gestura_0.3.0.0_x64.msix` → **le fichier à envoyer au Store** (non signé) ;
 - `Gestura_0.3.0.0_x64_test-signed.msix` → double-clic pour l'installer sur ton PC.
 
-Tests à faire sur la version installée :
+### 4.4 Tests à faire sur la version installée
+
+
 - ☐ Gestura se lance depuis le menu Démarrer ; Windows demande l'accès à la caméra
 - ☐ La caméra s'allume, la main est détectée, le curseur bouge (en quittant le mode
   test), le pincement clique
@@ -237,8 +278,8 @@ Tests à faire sur la version installée :
 | 0. Paquet, textes, politique de confidentialité | ✅ fait | — |
 | 1. Fusion dans `main`, dépôt public | Toi | 15 min |
 | 2. Compte développeur, paiement, fiscalité | Toi | 30 min + vérification |
-| 3. Réservation du nom, `store/.env` | Toi | 10 min |
-| 4. Build et tests sur Windows | Toi | 1 à 2 h |
+| 3. Réservation du nom, identité | ✅ fait | — |
+| 4. Build (GitHub) et tests sur ton PC | Toi | 30 min |
 | 5. Captures d'écran | Toi | 30 min |
 | 6. Soumission | Toi | 1 h + certification |
 | 7. Automatisation des mises à jour | Toi | 30 min |

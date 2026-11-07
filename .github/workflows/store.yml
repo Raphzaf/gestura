@@ -3,15 +3,25 @@ name: Microsoft Store
 # Builds the MSIX for the Microsoft Store with store/build_store.py and, on request,
 # sends it to Partner Center. Manual only: Actions > Microsoft Store > Run workflow.
 #
-# Configuration (Settings > Secrets and variables > Actions), same names as store/.env:
-#   Variables (not secret): GESTURA_STORE_IDENTITY_NAME, GESTURA_STORE_PUBLISHER,
-#                           GESTURA_STORE_PUBLISHER_DISPLAY_NAME, MSSTORE_PRODUCT_ID
-#   Secrets:                MSSTORE_TENANT_ID, MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID,
-#                           MSSTORE_CLIENT_SECRET
-# No signing certificate is needed: the Store signs the package itself.
+# Artifact "Gestura-msix":
+#   Gestura_<ver>_x64.msix              unsigned package to upload to Partner Center
+#   Gestura_<ver>_x64_test-signed.msix  same package signed with a throw-away test
+#   Gestura-test-certificate.cer        certificate, to install it on your own PC
+#                                       (see store/PUBLICATION.md, step 4)
+# The test certificate's private key only lives during the run and is then deleted:
+# nobody can sign anything else with it.
+#
+# Package identity (public: it is written in every package) comes from repository
+# variables with the same names as store/.env, or from the defaults below.
+# Submission secrets (Settings > Secrets and variables > Actions): MSSTORE_TENANT_ID,
+# MSSTORE_SELLER_ID, MSSTORE_CLIENT_ID, MSSTORE_CLIENT_SECRET.
 on:
   workflow_dispatch:
     inputs:
+      test_signed:
+        description: "Also build a test-signed copy + certificate (install on your PC)"
+        type: boolean
+        default: true
       submit:
         description: "Send the package to Partner Center"
         type: boolean
@@ -24,14 +34,14 @@ on:
 permissions:
   contents: read
 
+env:
+  GESTURA_STORE_IDENTITY_NAME: ${{ vars.GESTURA_STORE_IDENTITY_NAME || 'RaphZaf.Gestura' }}
+  GESTURA_STORE_PUBLISHER: ${{ vars.GESTURA_STORE_PUBLISHER || 'CN=6E503161-3688-4B42-BF41-89B48D3EC8F0' }}
+  GESTURA_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.GESTURA_STORE_PUBLISHER_DISPLAY_NAME || 'RaphZaf' }}
+
 jobs:
   msix:
     runs-on: windows-latest
-    environment: microsoft-store
-    env:
-      GESTURA_STORE_IDENTITY_NAME: ${{ vars.GESTURA_STORE_IDENTITY_NAME }}
-      GESTURA_STORE_PUBLISHER: ${{ vars.GESTURA_STORE_PUBLISHER }}
-      GESTURA_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.GESTURA_STORE_PUBLISHER_DISPLAY_NAME }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,24 +51,61 @@ jobs:
       - run: pip install -r requirements-dev.txt pyinstaller==6.22.3 && pip install -e . --no-deps
       - name: Tests
         run: python -m pytest -q
+      - name: Throw-away test certificate
+        if: inputs.test_signed
+        shell: pwsh
+        run: |
+          $plain = [guid]::NewGuid().ToString()
+          Write-Output "::add-mask::$plain"
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $env:GESTURA_STORE_PUBLISHER `
+            -KeyUsage DigitalSignature -FriendlyName "Gestura test (CI)" `
+            -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(1) `
+            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+          $pw = ConvertTo-SecureString $plain -AsPlainText -Force
+          Export-PfxCertificate -Cert $cert -FilePath "$env:RUNNER_TEMP\test.pfx" -Password $pw | Out-Null
+          New-Item -ItemType Directory -Force store\out | Out-Null
+          Export-Certificate -Cert $cert -FilePath store\out\Gestura-test-certificate.cer | Out-Null
+          Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)" -DeleteKey
+          "GESTURA_SIGN_CERT_PFX=$env:RUNNER_TEMP\test.pfx" >> $env:GITHUB_ENV
+          "GESTURA_SIGN_CERT_PASSWORD=$plain" >> $env:GITHUB_ENV
       - name: Build MSIX
-        run: python store/build_store.py
+        run: python store/build_store.py ${{ inputs.test_signed && '--sign' || '' }}
+      - name: Delete the test key
+        if: always()
+        shell: pwsh
+        run: Remove-Item "$env:RUNNER_TEMP\test.pfx" -ErrorAction SilentlyContinue
       - uses: actions/upload-artifact@v4
         with:
           name: Gestura-msix
-          path: store/out/*.msix
+          path: |
+            store/out/*.msix
+            store/out/*.cer
           if-no-files-found: error
-      - name: Microsoft Store Developer CLI
-        if: inputs.submit
-        uses: microsoft/setup-msstore-cli@v1
+
+  submit:
+    if: inputs.submit
+    needs: msix
+    runs-on: windows-latest
+    # Create this environment in Settings > Environments to require an approval
+    # before each submission (available for public repositories).
+    environment: microsoft-store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: Gestura-msix
+          path: store/out
+      - uses: microsoft/setup-msstore-cli@v1
       - name: Submit to Partner Center
-        if: inputs.submit
         env:
           MSSTORE_TENANT_ID: ${{ secrets.MSSTORE_TENANT_ID }}
           MSSTORE_SELLER_ID: ${{ secrets.MSSTORE_SELLER_ID }}
           MSSTORE_CLIENT_ID: ${{ secrets.MSSTORE_CLIENT_ID }}
           MSSTORE_CLIENT_SECRET: ${{ secrets.MSSTORE_CLIENT_SECRET }}
-          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID || '9N969KZPH44B' }}
         shell: bash
         run: |
           pkg=$(ls store/out/*_x64.msix | head -1)

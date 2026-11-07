@@ -75,13 +75,19 @@ publie comme artefact `Gestura-msix` ; cocher **submit** l'envoie dans Partner C
 (brouillon, ou certification si **commit** est coché). Configuration dans
 `Settings > Secrets and variables > Actions`, **mêmes noms** que dans `store/.env` :
 
-* *Variables* : `GESTURA_STORE_IDENTITY_NAME`, `GESTURA_STORE_PUBLISHER`,
+* *Variables* (facultatives : l'identité de Gestura, `RaphZaf.Gestura`, est déjà la
+  valeur par défaut du workflow) : `GESTURA_STORE_IDENTITY_NAME`, `GESTURA_STORE_PUBLISHER`,
   `GESTURA_STORE_PUBLISHER_DISPLAY_NAME`, `MSSTORE_PRODUCT_ID` ;
 * *Secrets* : `MSSTORE_TENANT_ID`, `MSSTORE_SELLER_ID`, `MSSTORE_CLIENT_ID`, `MSSTORE_CLIENT_SECRET`.
 
-Le job utilise l'environnement GitHub `microsoft-store` : tu peux y ajouter une
-approbation obligatoire avant toute soumission. Les secrets ne sont injectés que dans
-l'étape de soumission.
+L'option **test_signed** (cochée par défaut) ajoute à l'artefact une copie signée avec un
+certificat de test jetable et ce certificat (`Gestura-test-certificate.cer`), pour
+installer le paquet sur ton PC sans outil de développement. La clé privée de ce
+certificat n'existe que pendant l'exécution, puis elle est supprimée.
+
+La soumission tourne dans un job séparé, lié à l'environnement GitHub
+`microsoft-store` : tu peux y ajouter une approbation obligatoire avant tout envoi.
+Les secrets ne sont donnés qu'à ce job.
 
 ## 5. Particularités du paquet
 
