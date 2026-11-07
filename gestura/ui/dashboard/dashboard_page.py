@@ -92,6 +92,12 @@ class DashboardPage(QWidget):
         for key, row in self.mode_rows.items():
             row.toggled.connect(lambda on, k=key: app.set_mode(k, on))
             modes.body.addWidget(row)
+            if key == "mouse":
+                self.two_hand_row = ToggleRow(
+                    "Two-hand mouse", "Your control hand moves the cursor; the other hand pinches to click "
+                    "and drag. Steadier clicks.", app.settings.hand.two_hand_mouse)
+                self.two_hand_row.toggled.connect(self._set_two_hand)
+                modes.body.addWidget(self.two_hand_row)
         modes.body.addStretch(1)
         bottom.addWidget(modes, 1)
         prev = Card("Live preview")
@@ -167,6 +173,12 @@ class DashboardPage(QWidget):
     def _on_settings(self, s) -> None:
         for key, row in self.mode_rows.items():
             row.setChecked(getattr(s.modes, key))
+        self.two_hand_row.setChecked(s.hand.two_hand_mouse)
+
+    def _set_two_hand(self, on: bool) -> None:
+        s = self.app.settings.copy_deep()
+        s.hand.two_hand_mouse = on
+        self.app.update_settings(s)
 
     def _on_camera(self, status: str, message: str) -> None:
         text = {CameraStatus.ON: "On", CameraStatus.OFF: "Off", CameraStatus.STARTING: "Starting",
@@ -181,7 +193,12 @@ class DashboardPage(QWidget):
     def _on_telemetry(self, t: Telemetry) -> None:
         self.cam_detail.setText(f"{t.source} · {t.fps:.0f} FPS · {t.latency_ms:.0f} ms")
         h = t.hand
-        if h.visible:
+        if h.two_hand and (h.visible or h.click_visible):
+            moves = f"{h.handedness} moves" if h.visible else "move hand not visible"
+            clicks = f"{h.click_handedness} clicks" if h.click_visible else "click hand not visible"
+            self.hand_chip.set(f"{moves} · {clicks}", "on" if h.visible and h.click_visible else "lost")
+            self.hand_detail.setText(f"Pose: {h.pose.value.replace('_', ' ')} · Mode: {h.mode}")
+        elif h.visible:
             self.hand_chip.set(f"{h.handedness} hand · {h.score:.0%}", "on")
             self.hand_detail.setText(f"Pose: {h.pose.value.replace('_', ' ')} · Mode: {h.mode}")
         else:

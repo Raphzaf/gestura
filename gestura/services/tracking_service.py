@@ -201,7 +201,7 @@ class TrackingWorker(QThread):
                         show_hands=of["hands"], show_face=of["face"], show_axes=of["axes"],
                         show_region=of["region"] and (s.modes.mouse or s.modes.keyboard),
                         region=(s.cursor.region_left, s.cursor.region_top, s.cursor.region_right, s.cursor.region_bottom),
-                        control_hand=hs.hand_index, cursor=hs.cursor_frame,
+                        control_hand=hs.hand_index, click_hand=hs.click_index, cursor=hs.cursor_frame,
                         pinch_active=hs.left_pinch == "closed" or hs.right_pinch == "closed",
                         banner=self.banner,
                     )

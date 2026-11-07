@@ -248,3 +248,39 @@ def test_zoom_sends_a_real_ctrl_wheel(rig, qt):
     assert wheels[0][1] > 0 and wheels[2][1] < 0
     assert kb.held == frozenset()
     rec.w.close()
+
+
+def test_two_hand_mouse_drags_with_the_real_button(rig, qt):
+    from gestura.config.settings import Settings
+    from gestura.gestures.hand_gestures import HandGestureEngine
+
+    be, eng, _, safety, _ = rig
+    s = Settings()
+    s.tracking.dominant_hand = "right"
+    s.hand.two_hand_mouse = True
+    hands = HandGestureEngine(s.hand, s.cursor, s.tracking)
+    rec = _Recorder(qt)
+    clock = Clock()
+
+    def step(move_x, click_pose, n=1):
+        for _ in range(n):
+            tf = frame(clock.tick(), [make_hand("point", x=move_x, y=0.75, handedness="Right"),
+                                      make_hand(click_pose, x=0.25, y=0.75, handedness="Left")])
+            for ev in hands.update(tf):
+                eng.handle(ev)
+        qt.processEvents()
+
+    step(0.5, "relax", 30)
+    start = be.position()
+    step(0.5, "pinch", 16)  # left hand holds the pinch -> drag starts
+    for i in range(20):
+        step(0.5 + i * 0.006, "pinch")  # right hand moves
+    step(0.62, "relax", 4)  # left hand opens -> drop
+    pump(qt, 0.4)
+    kinds = [e[0] for e in rec.events]
+    press = next(e for e in rec.events if e[0] == "press")
+    release = next(e for e in rec.events if e[0] == "release")
+    assert abs(press[1][0] - start[0]) <= 3
+    assert "drag_move" in kinds[kinds.index("press"):kinds.index("release")]
+    assert release[1][0] - press[1][0] > 80
+    rec.w.close()

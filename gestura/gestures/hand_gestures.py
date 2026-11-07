@@ -13,6 +13,9 @@ Design rules
 
 Interaction model
 -----------------
+Two-hand mouse (optional): the control hand does everything below except
+pinches; the other hand only pinches (click / drag / right click).
+
 POINT (index extended)              -> hand.cursor (continuous, smoothed)
 thumb+index pinch, released         -> hand.pinch (count=1, or 2 for a quick second pinch)
 thumb+index pinch held              -> hand.drag_start, cursor follows, release -> hand.drag_end
@@ -126,6 +129,11 @@ class HandState:
     right_pinch: str = "open"
     palm_progress: float = 0.0
     dragging: bool = False
+    two_hand: bool = False  # two-hand mouse: one hand moves, the other clicks
+    click_index: int | None = None
+    click_visible: bool = False
+    click_handedness: str = ""
+    click_features: HandFeatures | None = None
     last_events: list[str] = field(default_factory=list)
 
 
@@ -157,6 +165,8 @@ class HandGestureEngine:
         self._dragging = False
         self._zoom_until = float("-inf")
         self._last_seen = float("-inf")
+        self._pointer_seen = float("-inf")
+        self._click_seen = float("-inf")
         self._prev_scroll: tuple[float, float] | None = None
         self._cursor_active = False
         self._handedness: str | None = None
@@ -239,6 +249,30 @@ class HandGestureEngine:
         events.append(GestureEvent(HandGesture.PINCH.value, now, {"count": self._click_count},
                                    "Double click" if self._click_count == 2 else "Left click"))
 
+    # ------------------------------------------------------------ hand roles
+    def assign_roles(self, hands: list[HandObservation]) -> tuple[int | None, int | None]:
+        """(movement hand index, click hand index).
+
+        One-hand mode: the same hand does both. Two-hand mode: the configured
+        control hand moves the cursor and the other hand clicks; when both hands
+        get the same handedness label, the one on the control-hand side of the
+        (mirrored) image is the movement hand.
+        """
+        if not self.hs.two_hand_mouse:
+            i = self.select_hand(hands)
+            return i, i
+        if not hands:
+            return None, None
+        want = "Left" if self.ts.dominant_hand == "left" else "Right"
+        if len(hands) == 1:
+            return (0, None) if hands[0].handedness == want else (None, 0)
+        a, b = sorted(range(len(hands)), key=lambda i: hands[i].score, reverse=True)[:2]
+        if hands[a].handedness != hands[b].handedness:
+            p = a if hands[a].handedness == want else b
+            return p, (b if p == a else a)
+        right, left = (a, b) if hands[a].landmarks[0, 0] > hands[b].landmarks[0, 0] else (b, a)
+        return (right, left) if want == "Right" else (left, right)
+
     # ----------------------------------------------------------------- update
     def update(self, tf: TrackingFrame) -> list[GestureEvent]:
         now = tf.timestamp
@@ -248,45 +282,64 @@ class HandGestureEngine:
         if zoom is not None:
             return events
 
-        idx = self.select_hand(tf.hands)
-        if idx is None:
-            if now - self._last_seen > self.hs.lost_reset_ms / 1000:
+        two = self.hs.two_hand_mouse
+        p_idx, c_idx = self.assign_roles(tf.hands)
+        lost = self.hs.lost_reset_ms / 1000
+
+        if p_idx is None and c_idx is None:
+            if now - self._last_seen > lost:
                 self._end_drag(now, events)  # never leave the button pressed
                 if self.state.visible or self._cursor_active or self._left.engaged:
                     self.reset()
             # New snapshot (never mutate one the UI thread may be reading).
             self.state = replace(self.state, visible=False, mode="idle", last_events=[e.label for e in events],
-                                 cursor_frame=None, cursor_screen=None, dragging=self._dragging)
+                                 cursor_frame=None, cursor_screen=None, dragging=self._dragging,
+                                 click_visible=False)
             return events
-
         self._last_seen = now
-        hand = tf.hands[idx]
-        self._handedness = hand.handedness
-        f = compute(hand)
         hs = self.hs
 
-        # ---- pinch candidates (with fist / resting-thumb guards)
-        left_close = (f.thumb_index < hs.pinch_on_ratio
-                      and f.thumb_middle >= hs.pinch_separation * f.thumb_index
-                      and f.reach[0] >= MIN_INDEX_REACH_FOR_PINCH)
-        left_open = f.thumb_index > hs.pinch_off_ratio
-        right_close = (f.thumb_middle < hs.pinch_on_ratio
-                       and f.thumb_index >= hs.pinch_separation * f.thumb_middle
-                       and f.reach[1] >= MIN_MIDDLE_REACH_FOR_PINCH)
-        right_open = f.thumb_middle > hs.pinch_off_ratio
-        pinching = (self._left.engaged or self._right.engaged or left_close or right_close)
+        fp = compute(tf.hands[p_idx]) if p_idx is not None else None
+        fc = fp if not two else (compute(tf.hands[c_idx]) if c_idx is not None else None)
+        if p_idx is not None:
+            self._handedness = tf.hands[p_idx].handedness
+            self._pointer_seen = now
+        if c_idx is not None:
+            self._click_seen = now
 
-        # ---- stable pose (frozen while a pinch is forming: pinching bends the index)
-        if not pinching:
-            self._pose.update(f.pose)
-        pose = self._pose.value
+        # ---- click hand: pinch candidates (with fist / resting-thumb guards)
+        if fc is not None:
+            left_close = (fc.thumb_index < hs.pinch_on_ratio
+                          and fc.thumb_middle >= hs.pinch_separation * fc.thumb_index
+                          and fc.reach[0] >= MIN_INDEX_REACH_FOR_PINCH)
+            left_open = fc.thumb_index > hs.pinch_off_ratio
+            right_close = (fc.thumb_middle < hs.pinch_on_ratio
+                           and fc.thumb_index >= hs.pinch_separation * fc.thumb_middle
+                           and fc.reach[1] >= MIN_MIDDLE_REACH_FOR_PINCH)
+            right_open = fc.thumb_middle > hs.pinch_off_ratio
+        elif now - self._click_seen > lost:
+            # click hand gone: release everything it was holding
+            left_close = right_close = False
+            left_open = right_open = True
+        else:  # brief dropout: keep the current pinch state
+            left_close = right_close = left_open = right_open = False
+        click_pinching = self._left.engaged or self._right.engaged or left_close or right_close
+
+        # ---- movement hand: stable pose (one-hand mode: frozen while a pinch forms)
+        if fp is not None and not (click_pinching and not two):
+            self._pose.update(fp.pose)
+        if fp is None and now - self._pointer_seen > lost:
+            self._pose.reset(Pose.NONE)
+        pose = self._pose.value if fp is not None else Pose.NONE
         clutch = pose == Pose.FIST
+        click_blocked = clutch and not two  # in two-hand mode a fist on the movement hand doesn't block clicks
+        pinching = click_pinching and not two  # pinches shape the movement hand only in one-hand mode
 
         left_ev = self._left.update(left_close, left_open, hs.pinch_min_frames)
         right_ev = self._right.update(right_close, right_open, hs.pinch_min_frames)
 
         # ---- left pinch: click, or hold to drag
-        if left_ev == "closed" and not clutch:
+        if left_ev == "closed" and not click_blocked:
             if hs.drag_enabled:
                 self._pinch_closed_at = now  # decide on release (click) or after the hold (drag)
             else:
@@ -304,31 +357,40 @@ class HandGestureEngine:
                 self._click_count = 0
             elif self._pinch_closed_at is not None:
                 self._pinch_closed_at = None
-                if not clutch:
+                if not click_blocked and fc is not None:
                     self._click(now, events)
-        if right_ev == "closed" and not clutch and not self._dragging and self._right_cd.ready(now):
+        if right_ev == "closed" and not click_blocked and not self._dragging and self._right_cd.ready(now):
             self._right_cd.trigger(now)
             self._last_click_t = now
             self._click_count = 0
             events.append(GestureEvent(HandGesture.MIDDLE_PINCH.value, now, {}, "Right click"))
 
-        # ---- cursor (also moves while dragging)
+        # ---- cursor (movement hand; also moves while dragging)
         mode = "idle"
         frozen = False
         cursor_frame = cursor_screen = None
-        if clutch and not self._dragging:
+        f = fp
+        if f is None:
+            self._cursor_active = False
+        elif clutch and not self._dragging:
             mode = "clutch"
+            self._cursor_active = False
         elif pose == Pose.POINT or self._dragging or (pinching and self._cursor_active):
             mode = "drag" if self._dragging else "cursor"
             anchor = f.index_tip if self.cs.anchor == "index_tip" else f.index_mcp
             if not self._cursor_active:
                 self._cursor_filter.reset()
             freeze_ratio = self.cs.freeze_ratio
-            frozen = self.cs.freeze_on_pinch and not self._dragging and (
-                pinching
-                or (f.thumb_index < freeze_ratio and f.thumb_middle >= hs.pinch_separation * f.thumb_index)
-                or (now - self._last_click_t) < self.cs.post_click_freeze_ms / 1000
-            )
+            post_click = (now - self._last_click_t) < self.cs.post_click_freeze_ms / 1000
+            if two:
+                # The moving hand never pinches, so only a short post-click hold remains.
+                frozen = self.cs.freeze_on_pinch and not self._dragging and (post_click or click_pinching)
+            else:
+                frozen = self.cs.freeze_on_pinch and not self._dragging and (
+                    pinching
+                    or (f.thumb_index < freeze_ratio and f.thumb_middle >= hs.pinch_separation * f.thumb_index)
+                    or post_click
+                )
             if not frozen:
                 sx, sy = self._cursor_filter(anchor[0], anchor[1], now)
                 cursor_frame = (sx, sy)
@@ -344,7 +406,7 @@ class HandGestureEngine:
             self._cursor_active = False
 
         # ---- scroll
-        if pose == Pose.TWO and not clutch and not pinching:
+        if f is not None and pose == Pose.TWO and not clutch and not pinching:
             mode = "scroll"
             sx, sy = self._scroll_filter(f.two_tip[0], f.two_tip[1], now)
             if self._prev_scroll is not None:
@@ -365,7 +427,7 @@ class HandGestureEngine:
             self._scroll_filter.reset()
 
         # ---- three fingers: vertical = volume steps, fast horizontal swipe = window snap
-        if pose == Pose.THREE and not clutch and not pinching:
+        if f is not None and pose == Pose.THREE and not clutch and not pinching:
             mode = "volume"
             tx, ty = self._three_filter(f.two_tip[0], f.two_tip[1], now)
             self._three_hist.append((now, f.two_tip[0], f.two_tip[1]))
@@ -394,7 +456,7 @@ class HandGestureEngine:
 
         # ---- open palm: swipe and hold (off briefly after a two-hand zoom)
         palm_progress = 0.0
-        raw_open = f.pose == Pose.OPEN
+        raw_open = f is not None and f.pose == Pose.OPEN
         if raw_open and not pinching and now >= self._zoom_until:
             if mode == "idle":
                 mode = "palm"
@@ -422,13 +484,17 @@ class HandGestureEngine:
             self._palm_hist.clear()
             self._palm_latched = False
 
+        ref = p_idx if p_idx is not None else c_idx
+        hand = tf.hands[ref]
         self.state = HandState(
-            visible=True, hand_index=idx, handedness=hand.handedness, score=hand.score,
-            pose=pose, raw_pose=f.pose, features=f, mode=mode,
-            cursor_frame=cursor_frame, cursor_screen=cursor_screen, frozen=frozen,
+            visible=p_idx is not None or not two, hand_index=p_idx, handedness=hand.handedness, score=hand.score,
+            pose=pose, raw_pose=f.pose if f is not None else Pose.NONE, features=f if f is not None else fc,
+            mode=mode, cursor_frame=cursor_frame, cursor_screen=cursor_screen, frozen=frozen,
             left_pinch=self._left.phase.value, right_pinch=self._right.phase.value,
             palm_progress=palm_progress if not self._palm_latched else 1.0,
-            dragging=self._dragging,
+            dragging=self._dragging, two_hand=two, click_index=c_idx if two else None,
+            click_visible=c_idx is not None, click_features=fc,
+            click_handedness=tf.hands[c_idx].handedness if c_idx is not None else "",
             last_events=[e.label for e in events if not e.continuous],
         )
         return events

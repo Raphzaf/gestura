@@ -185,3 +185,25 @@ def test_drag_gestures_are_not_remappable_in_settings(window):
     keys = [k for k in w.settings_page._widgets if k[0] == "mapping"]
     assert ("mapping", "hand.zoom_in") in keys and ("mapping", "hand.three_swipe_left") in keys
     assert ("mapping", "hand.drag_start") not in keys and ("mapping", "hand.drag_end") not in keys
+
+
+def test_dashboard_two_hand_mouse_switch(window, qt):
+    w, app, be, _ = window
+    row = w.dashboard.two_hand_row
+    assert not app.settings.hand.two_hand_mouse
+    row.switch.click()
+    assert app.settings.hand.two_hand_mouse
+    app.update_settings(app.settings.model_copy(update={}))
+    assert row.switch.isChecked()
+
+
+def test_preview_draws_movement_and_click_hands():
+    import numpy as np
+    from synthetic import frame, make_hand
+
+    from gestura.vision.drawing import Overlay, annotate
+
+    tf = frame(1.0, [make_hand("point", x=0.65, handedness="Right"), make_hand("pinch", x=0.3, handedness="Left")])
+    img = np.zeros((480, 640, 3), np.uint8)
+    out = annotate(img, tf, Overlay(control_hand=0, click_hand=1, pinch_active=True))
+    assert out.shape == img.shape and out.any()

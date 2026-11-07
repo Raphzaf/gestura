@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+* **Two-hand mouse** (Dashboard switch): the control hand moves the cursor, scrolls,
+  swipes and sets the volume; the other hand pinches to click, drag and right-click.
+  The cursor no longer moves when you click. The preview colours the moving hand blue
+  and the clicking hand green.
+
 ## 0.2.0
 
 * **Drag and drop**: pinch and hold ½ s, move, release. The mouse button is always

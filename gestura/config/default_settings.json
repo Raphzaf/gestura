@@ -50,6 +50,7 @@
     "scroll_invert": false,
     "volume_steps": 30.0,
     "volume_max_steps_per_frame": 3,
+    "two_hand_mouse": false,
     "drag_enabled": true,
     "drag_hold_ms": 450,
     "zoom_enabled": true,

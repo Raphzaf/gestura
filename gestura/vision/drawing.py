@@ -28,6 +28,7 @@ class Overlay:
     show_region: bool = True
     region: tuple[float, float, float, float] | None = None  # l, t, r, b normalized
     control_hand: int | None = None  # index into tf.hands that drives the cursor
+    click_hand: int | None = None  # two-hand mouse: index of the hand that clicks
     cursor: tuple[float, float] | None = None  # normalized smoothed cursor (frame space)
     pinch_active: bool = False
     banner: str = ""
@@ -53,15 +54,17 @@ def annotate(frame: np.ndarray, tf: TrackingFrame, ov: Overlay) -> np.ndarray:
         for i, hand in enumerate(tf.hands):
             pts = (hand.landmarks[:, :2] * (w, h)).astype(np.int32)
             primary = i == ov.control_hand
-            colour = ACCENT if primary else MUTED
+            clicker = i == ov.click_hand and not primary
+            colour = ACCENT if primary else ACCENT_2 if clicker else MUTED
             for a, b in HAND_CONNECTIONS:
                 cv2.line(out, tuple(pts[a]), tuple(pts[b]), colour, 2 * thick, cv2.LINE_AA)
             for j, p in enumerate(pts):
                 r = 4 * thick if j in FINGERTIPS else 3 * thick
                 cv2.circle(out, tuple(p), r, WHITE, -1, cv2.LINE_AA)
                 cv2.circle(out, tuple(p), r, colour, 1, cv2.LINE_AA)
-            _tag(out, f"{hand.handedness} {hand.score:.0%}", pts[0], colour, thick)
-            if primary:
+            role = " · moves" if primary and ov.click_hand is not None else " · clicks" if clicker else ""
+            _tag(out, f"{hand.handedness} {hand.score:.0%}{role}", pts[0], colour, thick)
+            if clicker or (primary and ov.click_hand is None):
                 p4, p8 = tuple(pts[4]), tuple(pts[8])
                 cv2.line(out, p4, p8, ACCENT_2 if ov.pinch_active else WARN, thick, cv2.LINE_AA)
 

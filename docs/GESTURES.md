@@ -35,6 +35,21 @@ volume, Spotify, browsers (YouTube, Netflix…), VLC and any app that honours me
 Assign them to any gesture in Settings › Gesture mapping; head tilts to the shoulders
 (unmapped by default) are a good fit for next / previous track.
 
+### Two-hand mouse
+
+With *Two-hand mouse* on (Dashboard or Settings › Hand gestures), the hands get roles:
+
+* **Movement hand** = the control hand (Settings › Tracking, right by default): cursor,
+  scroll, volume, three-finger and palm swipes, palm-hold pause, fist clutch. Its own
+  pinches are ignored, so the cursor never needs to freeze while you aim.
+* **Click hand** = the other hand: thumb + index (click on release, hold to drag while
+  the movement hand moves), thumb + middle (right click). Nothing else it does triggers
+  an action, and a fist on the movement hand does not block its clicks.
+* Roles come from MediaPipe's handedness; if both hands get the same label, the hand on
+  the control-hand side of the mirrored image moves.
+* Either hand may leave the view: the other keeps working. If the click hand disappears
+  during a drag, the button is released. Two open hands still zoom.
+
 ### How poses are computed
 
 Per frame, using MediaPipe's metric *world* landmarks (independent of distance,

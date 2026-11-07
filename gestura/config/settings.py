@@ -76,6 +76,7 @@ class HandGestureSettings(_Section):
     scroll_invert: bool = Field(False, title="Invert scroll direction")
     volume_steps: float = Field(30.0, ge=5.0, le=100.0, title="Volume steps per hand height (three fingers)")
     volume_max_steps_per_frame: int = Field(3, ge=1, le=10, title="Max volume steps per frame")
+    two_hand_mouse: bool = Field(False, title="Two-hand mouse: control hand moves, other hand clicks")
     drag_enabled: bool = Field(True, title="Pinch and hold to drag (clicks fire on release)")
     drag_hold_ms: int = Field(450, ge=200, le=1500, title="Hold pinch this long to start a drag (ms)")
     zoom_enabled: bool = Field(True, title="Two open hands: spread / bring together to zoom")

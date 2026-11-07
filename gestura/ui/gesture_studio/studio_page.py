@@ -160,9 +160,14 @@ class StudioPage(QWidget):
         self.perf_detail.setText(f"Hand model {t.hand_ms:.0f} ms · Face model {t.face_ms:.0f} ms · "
                                  f"{t.frame_size[0]}×{t.frame_size[1]}")
         h = t.hand
-        if h.visible and h.features is not None:
-            f = h.features
-            self.hand_title.setText(f"{h.handedness} hand · confidence {h.score:.0%}")
+        if (h.visible or h.click_visible) and h.features is not None:
+            f = h.click_features or h.features  # pinch meters follow the hand that clicks
+            if h.two_hand:
+                moves = f"{h.handedness} hand moves" if h.visible else "move hand not visible"
+                clicks = f"{h.click_handedness} hand clicks" if h.click_visible else "click hand not visible"
+                self.hand_title.setText(f"{moves} · {clicks}")
+            else:
+                self.hand_title.setText(f"{h.handedness} hand · confidence {h.score:.0%}")
             frozen = " · cursor frozen" if h.frozen else ""
             self.hand_pose.setText(f"Pose: {h.pose.value.replace('_', ' ')} · Mode: {h.mode}{frozen}")
             on = self.app.settings.hand.pinch_on_ratio
@@ -171,7 +176,7 @@ class StudioPage(QWidget):
             self.m_tm.set(f.thumb_middle, theme.SUCCESS if h.right_pinch == "closed" else theme.ACCENT)
             self.m_palm.set(h.palm_progress, theme.WARN if h.palm_progress < 1 else theme.SUCCESS)
             names = ("Index", "Middle", "Ring", "Pinky")
-            self.fingers.setText("  ".join(f"{n} {'▲' if e else '▼'}" for n, e in zip(names, f.extended)))
+            self.fingers.setText("  ".join(f"{n} {'▲' if e else '▼'}" for n, e in zip(names, h.features.extended)))
         else:
             self.hand_title.setText("No hand in view" if t.hands_visible == 0 else
                                     f"{t.hands_visible} hand(s) — not the control hand")

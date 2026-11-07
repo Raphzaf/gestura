@@ -8,7 +8,7 @@ locally; no video is stored or uploaded.
 Primary target: **Windows 10/11 (x64)**. Built with Python, PySide6, MediaPipe
 and OpenCV.
 
-> **Status: early (v0.2.0).** All six milestones are implemented and covered by
+> **Status: early (v0.3.0).** All six milestones are implemented and covered by
 > automated tests, including on Windows in CI, but the app has **not yet been used
 > with a live webcam by a real user**. See [What has been verified](#what-has-been-verified).
 
@@ -64,6 +64,8 @@ other apps that use the camera (Teams, Zoom, the Camera app).
      fingers scroll, three fingers up/down change the volume, a quick three-finger swipe
      snaps the window left/right, two open hands spread/closed zoom, a fist is a
      "clutch" to reposition your hand.
+   * **Two-hand mouse** (switch under Mouse mode): one hand moves the cursor, the other
+     hand pinches to click and drag. Try it if clicks make the cursor jump.
    * **Navigation mode**: turn on to go back/forward with head turns; nod twice to press Enter.
    * **Keyboard mode**: shows the floating keyboard; point at a key and pinch.
      Click the text field you want to type into first.
@@ -131,6 +133,12 @@ installer on Windows and publishes them as a GitHub Release named after the vers
 | Open palm swipe left / right | Previous / next tab |
 | Open palm held still (1.2 s) | Pause / resume |
 | Fist | Clutch — hand controls ignored while held |
+
+**Two-hand mouse** (Dashboard → *Two-hand mouse*): your control hand (Settings ›
+Tracking, right by default) moves the cursor, scrolls, swipes and changes the volume;
+the **other hand** only pinches: click, pinch-and-hold to drag (while the first hand
+moves), thumb + middle for right click. Because the hand that moves never pinches, the
+cursor stays exactly where you aimed when you click.
 
 | Head (Navigation mode) | Action |
 |---|---|
@@ -264,6 +272,11 @@ caméra*. Fermez les autres applications qui utilisent la caméra (Teams, Zoom, 
      règlent le volume, un balayage rapide à trois doigts colle la fenêtre à gauche ou à
      droite de l'écran, **deux mains ouvertes** qu'on écarte ou rapproche zooment, le
      poing fermé « débraye » pour repositionner la main.
+   * **Souris à deux mains** (Two-hand mouse, interrupteur sous Mouse mode) : une main
+     (la main de contrôle, la droite par défaut) déplace le curseur, fait défiler,
+     balaye et règle le volume ; l'**autre main** ne sert qu'à pincer : clic, pincement
+     maintenu pour glisser-déposer (pendant que la première main déplace), pouce + majeur
+     pour le clic droit. Le curseur ne bouge plus au moment du clic.
    * **Mode navigation** (Navigation mode) : tournez la tête pour page précédente /
      suivante ; hochez la tête deux fois pour valider (Entrée).
    * **Mode clavier** (Keyboard mode) : affiche le clavier flottant (AZERTY par défaut) ;
