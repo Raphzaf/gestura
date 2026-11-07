@@ -213,6 +213,7 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * [Stratégie économique (FR)](docs/business_model_gestura.md) — comparaison de trois modèles et prévisions
 * [Frictions d'utilisation (FR)](docs/friction_utilisation.md) — contraintes matérielles mesurées, fatigue, protocole de test
 * [Verdict commercial (FR)](docs/verdict_commercial_gestura.md) — faut-il commercialiser Gestura, et par quel canal
+* [Business plan (FR)](docs/business_plan_gestura.md) — offre B2B accessibilité, financement Agefiph / FIPHFP, projections sur 3 ans
 
 ## License
 
