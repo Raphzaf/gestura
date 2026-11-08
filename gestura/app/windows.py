@@ -22,6 +22,7 @@ def build_main_window(app):
     from ..ui.keyboard.keyboard_page import KeyboardPage
     from ..ui.keyboard.keyboard_window import KeyboardWindow
     from ..ui.main_window import MainWindow
+    from ..ui.widgets.dwell_indicator import DwellIndicator
     from ..ui.widgets.feedback_overlay import FeedbackOverlay
 
     s = app.settings
@@ -34,6 +35,17 @@ def build_main_window(app):
     window.keyboard_window = kw
     overlay = FeedbackOverlay(s.interface.overlay_position)
     window.overlay = overlay
+    dwell = DwellIndicator()
+    window.dwell_indicator = dwell
+
+    def on_telemetry(t) -> None:
+        if app.settings.modes.face_mouse and t.face.visible:
+            dwell.set_state(t.face.dwell_progress, t.face.scroll_mode)
+        elif dwell.isVisible():
+            dwell.hide()
+
+    app.tracking.telemetry.connect(on_telemetry)
+    app.tracking.running_changed.connect(lambda running: None if running else dwell.hide())
 
     # ---- keyboard visibility / persistence
     def place_keyboard() -> None:
@@ -94,11 +106,20 @@ def build_main_window(app):
 
     last_state = {"v": app.safety.state}
 
+    def resume_hint() -> str:
+        cfg = app.settings
+        hints = []
+        if cfg.modes.mouse and cfg.mappings.hand.get("hand.palm_hold") == "app.toggle_pause":
+            hints.append("hold an open palm")
+        if cfg.modes.face_mouse and cfg.mappings.face.get("eye.closed_hold") == "app.toggle_pause":
+            hints.append("close your eyes for 2 s")
+        return " or ".join(hints) or "press Resume"
+
     def on_state() -> None:
         st = app.safety.state
         if st != last_state["v"]:
             if st == EngineState.PAUSED:
-                flash("Gestura paused — hold open palm to resume", "warn")
+                flash(f"Gestura paused — {resume_hint()} to resume", "warn")
             elif st == EngineState.ACTIVE and last_state["v"] == EngineState.PAUSED:
                 flash("Gestura resumed", "ok")
             elif st == EngineState.EMERGENCY:
@@ -114,11 +135,30 @@ def build_main_window(app):
 
     window.dashboard.calibrate_requested.connect(calibrate)
 
+    def calibrate_eyes() -> None:
+        from ..ui.calibration.gaze_calibration import GazeCalibration
+
+        if getattr(window, "eye_calibration", None) is not None and window.eye_calibration.isVisible():
+            return
+        cal = GazeCalibration(app)
+        window.eye_calibration = cal
+
+        def done(saved: bool) -> None:
+            if saved:
+                flash("Eye calibration saved", "ok")
+            window.eye_calibration = None
+
+        cal.done.connect(done)
+        cal.start()
+
+    window.dashboard.eye_calibrate_requested.connect(calibrate_eyes)
+
     original_close = window.closeEvent
 
     def close_all(event) -> None:
         kw.close()
         overlay.close()
+        dwell.close()
         original_close(event)
 
     window.closeEvent = close_all

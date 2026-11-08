@@ -116,6 +116,52 @@ class HeadGestureSettings(_Section):
     calibrated: bool = Field(False, title="Neutral pose calibrated")
 
 
+class FaceMouseSettings(_Section):
+    """Hands-free mouse: eye tracking, head pointer, winks, blinks, face expressions."""
+
+    pointer: Literal["hybrid", "gaze", "head"] = Field(
+        "hybrid", title="Pointer (hybrid = eyes jump, head refines; eyes need calibration)")
+    # Head pointer
+    head_range_yaw_deg: float = Field(14.0, ge=4.0, le=40.0, title="Head pointer: turn this far to reach the side (deg)")
+    head_range_pitch_deg: float = Field(10.0, ge=3.0, le=30.0, title="Head pointer: tilt this far to reach top / bottom (deg)")
+    head_smoothing_min_cutoff: float = Field(0.8, ge=0.05, le=10.0, title="Head pointer smoothing (lower = smoother)")
+    head_smoothing_beta: float = Field(4.0, ge=0.0, le=30.0, title="Head pointer responsiveness to fast moves")
+    # Eye (gaze) pointer
+    gaze_smoothing_min_cutoff: float = Field(0.35, ge=0.05, le=5.0, title="Eye pointer smoothing (lower = smoother)")
+    gaze_smoothing_beta: float = Field(1.5, ge=0.0, le=20.0, title="Eye pointer responsiveness to fast moves")
+    gaze_fixation_radius: float = Field(0.035, ge=0.0, le=0.2, title="Eye pointer ignores movements smaller than (screen fraction)")
+    screen_half_angle_deg: float = Field(22.0, ge=8.0, le=45.0, title="Half the screen width seen from your eyes (deg)")
+    hybrid_jump_distance: float = Field(0.15, ge=0.05, le=0.5, title="Hybrid: look this far from the pointer to move it there (screen fraction)")
+    hybrid_jump_ms: int = Field(250, ge=50, le=2000, title="Hybrid: look there this long (ms)")
+    hybrid_head_gain: float = Field(0.6, ge=0.1, le=3.0, title="Hybrid: head fine-tuning speed")
+    # Eyes
+    eye_close_ratio: float = Field(0.55, ge=0.2, le=0.9, title="Eye counts as closed below this fraction of its open size")
+    eye_open_ratio: float = Field(0.75, ge=0.3, le=1.0, title="Eye counts as open again above this fraction")
+    wink_other_eye_ratio: float = Field(0.65, ge=0.3, le=1.0, title="Wink: the other eye must stay open above this fraction")
+    wink_min_ms: int = Field(150, ge=50, le=1000, title="Wink: keep one eye closed at least (ms)")
+    long_wink_ms: int = Field(800, ge=300, le=3000, title="Long wink: keep one eye closed (ms)")
+    long_blink_ms: int = Field(600, ge=300, le=3000, title="Long blink: both eyes closed at least (ms)")
+    double_blink_min_ms: int = Field(180, ge=80, le=600, title="Double blink: each blink at least (ms)")
+    double_blink_window_ms: int = Field(700, ge=200, le=2000, title="Double blink: second blink within (ms)")
+    eyes_closed_hold_ms: int = Field(2000, ge=800, le=10000, title="Eyes closed hold (ms)")
+    freeze_on_blink: bool = Field(True, title="Freeze the pointer while an eye closes")
+    # Face expressions
+    mouth_open_ratio: float = Field(0.35, ge=0.1, le=1.0, title="Mouth open: lip gap / mouth width above")
+    smile_ratio: float = Field(1.12, ge=1.02, le=1.6, title="Smile: mouth wider than neutral by")
+    brow_raise_ratio: float = Field(1.18, ge=1.05, le=1.8, title="Eyebrows raised: higher than neutral by")
+    expression_hold_ms: int = Field(300, ge=50, le=3000, title="Hold an expression (ms)")
+    action_cooldown_ms: int = Field(500, ge=0, le=5000, title="Pause between eye / face actions (ms)")
+    # Dwell click and scroll mode
+    dwell_click: bool = Field(False, title="Dwell click: keep the pointer still to click")
+    dwell_ms: int = Field(1000, ge=300, le=5000, title="Dwell time (ms)")
+    dwell_radius: float = Field(0.025, ge=0.005, le=0.15, title="Dwell: pointer stays within (screen fraction)")
+    scroll_speed: float = Field(15.0, ge=1.0, le=100.0, title="Scroll mode speed (notches per second)")
+    scroll_dead_zone: float = Field(0.05, ge=0.0, le=0.25, title="Scroll mode dead zone (screen fraction)")
+    # Eye calibration (written by the calibration screen)
+    gaze_model: list[float] = Field(default_factory=list, title="Eye calibration data")
+    gaze_error: float = Field(0.0, ge=0.0, le=10.0, title="Measured eye pointer error (screen heights)")
+
+
 class SafetySettings(_Section):
     start_in_test_mode: bool = Field(True, title="Start in test mode (no real actions)")
     confirm_sensitive: bool = Field(True, title="Repeat gesture to confirm sensitive actions")
@@ -148,6 +194,7 @@ class Modes(_Section):
     mouse: bool = Field(True, title="Mouse mode (hand)")
     navigation: bool = Field(False, title="Navigation mode (head)")
     keyboard: bool = Field(False, title="Keyboard mode")
+    face_mouse: bool = Field(False, title="Hands-free mouse (eyes & head)")
 
 
 class HandGesture(str, Enum):
@@ -179,6 +226,24 @@ class HeadGesture(str, Enum):
     ROLL_RIGHT = "head.roll_right"
 
 
+class FaceGesture(str, Enum):
+    """Eye, head-pointer and face-expression gestures of the hands-free mouse."""
+
+    CURSOR = "face.cursor"
+    SCROLL = "face.scroll"
+    WINK_LEFT = "eye.wink_left"
+    WINK_RIGHT = "eye.wink_right"
+    LONG_WINK_LEFT = "eye.long_wink_left"
+    LONG_WINK_RIGHT = "eye.long_wink_right"
+    LONG_BLINK = "eye.long_blink"
+    DOUBLE_BLINK = "eye.double_blink"
+    EYES_CLOSED = "eye.closed_hold"
+    MOUTH_OPEN = "face.mouth_open"
+    SMILE = "face.smile"
+    BROWS_RAISED = "face.brows_raised"
+    DWELL = "face.dwell"
+
+
 DEFAULT_HAND_MAPPINGS: dict[str, str] = {
     HandGesture.CURSOR.value: "mouse.move",
     HandGesture.PINCH.value: "mouse.left_click",
@@ -207,9 +272,27 @@ DEFAULT_HEAD_MAPPINGS: dict[str, str] = {
 }
 
 
+DEFAULT_FACE_MAPPINGS: dict[str, str] = {
+    FaceGesture.CURSOR.value: "mouse.move",
+    FaceGesture.SCROLL.value: "mouse.scroll",
+    FaceGesture.WINK_LEFT.value: "mouse.left_click",
+    FaceGesture.WINK_RIGHT.value: "mouse.right_click",
+    FaceGesture.LONG_WINK_LEFT.value: "mouse.drag_toggle",
+    FaceGesture.LONG_WINK_RIGHT.value: "face.recenter",
+    FaceGesture.LONG_BLINK.value: "mouse.double_click",
+    FaceGesture.DOUBLE_BLINK.value: "none",
+    FaceGesture.EYES_CLOSED.value: "app.toggle_pause",
+    FaceGesture.MOUTH_OPEN.value: "none",
+    FaceGesture.SMILE.value: "none",
+    FaceGesture.BROWS_RAISED.value: "face.scroll_mode",
+    FaceGesture.DWELL.value: "mouse.left_click",
+}
+
+
 class MappingSettings(_Section):
     hand: dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_HAND_MAPPINGS))
     head: dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_HEAD_MAPPINGS))
+    face: dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_FACE_MAPPINGS))
 
     @field_validator("hand")
     @classmethod
@@ -225,6 +308,13 @@ class MappingSettings(_Section):
         merged.update({k: val for k, val in v.items() if k in DEFAULT_HEAD_MAPPINGS})
         return merged
 
+    @field_validator("face")
+    @classmethod
+    def _complete_face(cls, v: dict[str, str]) -> dict[str, str]:
+        merged = dict(DEFAULT_FACE_MAPPINGS)
+        merged.update({k: val for k, val in v.items() if k in DEFAULT_FACE_MAPPINGS})
+        return merged
+
 
 class Settings(_Section):
     schema_version: int = 1
@@ -233,6 +323,7 @@ class Settings(_Section):
     cursor: CursorSettings = Field(default_factory=CursorSettings)
     hand: HandGestureSettings = Field(default_factory=HandGestureSettings)
     head: HeadGestureSettings = Field(default_factory=HeadGestureSettings)
+    face: FaceMouseSettings = Field(default_factory=FaceMouseSettings)
     safety: SafetySettings = Field(default_factory=SafetySettings)
     keyboard: KeyboardSettings = Field(default_factory=KeyboardSettings)
     startup: StartupSettings = Field(default_factory=StartupSettings)
@@ -244,6 +335,8 @@ class Settings(_Section):
     def _check_hysteresis(self) -> "Settings":
         if self.hand.pinch_off_ratio <= self.hand.pinch_on_ratio:
             raise ValueError("hand.pinch_off_ratio must be greater than hand.pinch_on_ratio")
+        if self.face.eye_open_ratio <= self.face.eye_close_ratio:
+            raise ValueError("face.eye_open_ratio must be greater than face.eye_close_ratio")
         return self
 
     def copy_deep(self) -> "Settings":

@@ -16,6 +16,7 @@ import cv2
 import numpy as np
 
 from ..core.types import TrackingFrame
+from ..gestures.face_features import EYE_CONTOURS, IRIS_A, IRIS_B
 from .face_tracker import FACE_CONTOURS, NOSE_TIP
 from .hand_tracker import HAND_CONNECTIONS
 
@@ -40,6 +41,7 @@ class Overlay:
     cursor: tuple[float, float] | None = None  # normalized smoothed cursor (frame space)
     pinch_active: bool = False
     banner: str = ""
+    eyes: tuple[bool, bool] | None = None  # closed state of the image-left / image-right eye
 
 
 def annotate(frame: np.ndarray, tf: TrackingFrame, ov: Overlay) -> np.ndarray:
@@ -55,6 +57,15 @@ def annotate(frame: np.ndarray, tf: TrackingFrame, ov: Overlay) -> np.ndarray:
         pts = (tf.face.landmarks[:, :2] * (w, h)).astype(np.int32)
         for a, b in FACE_CONTOURS:
             cv2.line(out, tuple(pts[a]), tuple(pts[b]), (200, 200, 200), 1, cv2.LINE_AA)
+        if ov.eyes is not None and len(pts) > IRIS_B:
+            centers = [pts[IRIS_A], pts[IRIS_B]]
+            left_is_a = centers[0][0] <= centers[1][0]
+            for k, (a, b) in enumerate(EYE_CONTOURS):
+                is_a = k < len(EYE_CONTOURS) // 2
+                closed = ov.eyes[0] if is_a == left_is_a else ov.eyes[1]
+                cv2.line(out, tuple(pts[a]), tuple(pts[b]), WARN if closed else ACCENT_2, 2 * thick, cv2.LINE_AA)
+            for c in centers:
+                cv2.circle(out, tuple(c), 2 * thick + 1, ACCENT, -1, cv2.LINE_AA)
         if ov.show_axes and tf.face.pose is not None:
             _draw_head_axes(out, pts[NOSE_TIP], tf.face.pose.yaw, tf.face.pose.pitch, w)
 

@@ -97,6 +97,75 @@ your calibrated neutral pose. A head gesture fires only when **all** hold:
 Run the **Calibration wizard** once: it captures your neutral pose and asks you to
 turn right and nod once, learning the sign of each axis for your camera.
 
+## Eyes & face (Hands-free mouse mode)
+
+For people who cannot use their hands (or whose hands are busy): the eyes and the
+head move the pointer, the eyes and the face click. Turn it on with
+**Dashboard › Hands-free mouse (eyes & head)**.
+
+### Pointer
+
+| Pointer | How it works | Calibration |
+|---|---|---|
+| **Eyes + head** (recommended) | Look at a far-away target: after ¼ s the pointer jumps there. Small head movements then fine-tune it. | Eyes (Dashboard › *Calibrate eyes…*) |
+| **Eyes only** | The pointer follows your gaze; movements smaller than 3.5 % of the screen are ignored to hold it steady. | Eyes |
+| **Head only** | The head is a pointer: turn ±14° to reach the sides, tilt ±10° to reach the top and bottom. Most precise. | Head neutral pose (*Calibrate…*) |
+
+Until the eyes are calibrated, *Eyes + head* and *Eyes only* use the head pointer.
+While the head drives the pointer, the Navigation-mode head gestures are muted (a
+head turn moves the pointer instead of going back a page). When a hand is controlling
+the mouse in Mouse mode, the hand has priority over the face pointer; winks keep working.
+
+**Eye calibration** — a full-screen dot moves to 9 positions: follow it with your
+eyes, head still (about 25 s, nothing to click). 4 more dots then *measure* the
+accuracy, which is shown in pixels with advice. Webcam eye tracking is coarse:
+expect roughly 100–250 px on a 1080p screen, depending on light, webcam and
+glasses. That is why the hybrid pointer lets the head do the last centimetres.
+
+How it works: the iris centre (landmarks 468 / 473) is measured in each eye's own
+frame (along and across the corner-to-corner axis, divided by the eye width), plus
+the eye opening (the upper lid follows vertical gaze). A second-order polynomial
+fitted with ridge regression maps these to the screen; head rotation is added
+physically (gaze = head direction + eye-in-head direction). See
+`gestura/gestures/gaze.py`.
+
+### Eye and face actions (all remappable)
+
+| Gesture | Default action |
+|---|---|
+| **Left wink** (left eye closed 150–800 ms, right eye open) | Left click |
+| **Right wink** | Right click |
+| **Long left wink** (≥ 0.8 s) | Drag: press the button; long left wink again to drop |
+| **Long right wink** | Re-centre the head pointer |
+| **Long blink** (both eyes ≥ 0.6 s) | Double click |
+| **Eyes closed 2 s** | Pause / resume Gestura |
+| **Raise eyebrows** | Scroll mode on / off: tilt (or look) up / down to scroll, back to centre to stop |
+| **Dwell** (pointer still 1 s, *Dwell click* switch) | Left click |
+| Double blink, open mouth, smile | unmapped (available) |
+
+Guards against accidental clicks:
+
+* **Natural blinks do nothing.** They close both eyes for ~100–400 ms; a wink needs
+  one eye open, a long blink needs ≥ 600 ms.
+* **Per-eye calibration on the fly**: each eye's "open" size is its 85th percentile
+  over the last ~8 s, so no setup is needed and narrow or droopy eyes work. Closed
+  = below 55 % of that size, open again = above 75 % (hysteresis).
+* **A wink that turns into a blink is cancelled**; the other eye may squint a
+  little once the wink has started.
+* **The pointer freezes while an eye closes** and goes back to where it was 0.12 s
+  before: closing lids pull the iris landmarks down, which would otherwise move the
+  pointer just before the click.
+* Expressions are measured against a rolling neutral face and must be held 0.3 s.
+* 0.5 s between two eye / face actions; dwell clicks once per rest (move away to
+  re-arm). A ring next to the pointer shows the dwell progress and scroll mode.
+
+Gesture Studio's *Eyes & face* card shows both eyes' opening against the thresholds,
+the mouth, smile and eyebrow levels, and what is about to happen. Every threshold is
+in **Settings › Eyes & face**; every action in **Settings › Gesture mapping**.
+
+**Typing with the eyes**: show the virtual keyboard (Keyboard mode), enlarge it
+(Settings › Keyboard › Size) and click keys with winks or dwell.
+
 ## Virtual keyboard (Keyboard mode)
 
 Point at a key and pinch to press it. Shift applies to the next character (select
@@ -116,6 +185,6 @@ Considered for users without reliable hand control:
 * **Row/column scanning** with nod to select: robust and low-effort, but slow
   (~2–4 s per character).
 
-Recommendation for a follow-up: a "head pointer" mode with dwell clicking, built
-as a new continuous head gesture mapped to `mouse.move`, plus a dwell-click
-timer in the command layer. Not implemented in this version.
+Done in 0.4.0: the head pointer and dwell click are part of the hands-free mouse
+(see *Eyes & face* above), with winks as faster clicks. Row/column scanning is
+still not implemented.

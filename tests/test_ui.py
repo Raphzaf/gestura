@@ -215,3 +215,102 @@ def test_preview_draws_movement_and_click_hands():
     img = np.zeros((480, 640, 3), np.uint8)
     out = annotate(img, tf, Overlay(control_hand=0, click_hand=1, pinch_active=True))
     assert out.shape == img.shape and out.any()
+
+
+# ------------------------------------------------------------- hands-free mouse
+def test_dashboard_hands_free_controls(window):
+    w, app, _, _ = window
+    d = w.dashboard
+    d.mode_rows["face_mouse"].toggled.emit(True)
+    assert app.settings.modes.face_mouse
+    d.pointer_combo.setCurrentIndex(d.pointer_combo.findData("head"))
+    assert app.settings.face.pointer == "head"
+    assert "no calibration needed" in d.eye_status.text()
+    d.dwell_row.toggled.emit(True)
+    assert app.settings.face.dwell_click
+    tabs = [w.settings_page.tabs.tabText(i) for i in range(w.settings_page.tabs.count())]
+    assert "Eyes & face" in tabs
+    combo = w.settings_page._widgets[("mapping", "eye.wink_left")]
+    combo.setCurrentIndex(combo.findData("mouse.double_click"))
+    assert app.settings.mappings.face["eye.wink_left"] == "mouse.double_click"
+    assert ("face", "gaze_model") not in w.settings_page._widgets  # calibration data is not a form field
+
+
+def _face_telemetry(u: float, v: float, closed: bool = False):
+    from gestura.gestures.face_gestures import FaceState
+    from gestura.services.tracking_service import Telemetry
+
+    fs = FaceState(visible=True, pointer="hybrid", features=((u - 0.5) * 0.3, (v - 0.5) * 0.1, 0.3 - (v - 0.5) * 0.05),
+                   yaw=2.0, pitch=-1.0, left_closed=closed)
+    return Telemetry(face=fs)
+
+
+def test_eye_calibration_flow_saves_a_model(gapp, qt):
+    from gestura.gestures import gaze
+    from gestura.ui.calibration import gaze_calibration as gc
+
+    app, _, _ = gapp
+    now = [0.0]
+    cal = gc.GazeCalibration(app, clock=lambda: now[0])
+    cal.resize(1600, 900)
+    cal._restart()
+    saved = []
+    cal.done.connect(saved.append)
+    for _ in range(4000):
+        if cal.phase == "result":
+            break
+        if cal.phase == "collect":
+            u, v = cal.points[cal.index]
+            cal._on_telemetry(_face_telemetry(u, v))
+            cal._on_telemetry(_face_telemetry(u, v, closed=True))  # blink samples are ignored
+        now[0] += 0.07
+        cal.tick()
+    assert cal.phase == "result" and cal.result_ok, cal.result_text
+    assert len(app.settings.face.gaze_model) == gaze.MODEL_LEN
+    assert app.settings.face.gaze_error < 0.05
+    assert "Accuracy: Good" in cal.result_text
+    cal.paint_check = cal.grab()  # renders without error
+    cal.finish(True)
+    assert saved == [True]
+
+
+def test_eye_calibration_waits_for_a_face(gapp, qt):
+    from gestura.ui.calibration import gaze_calibration as gc
+
+    app, _, _ = gapp
+    now = [0.0]
+    cal = gc.GazeCalibration(app, clock=lambda: now[0])
+    cal._restart()
+    for _ in range(200):  # 14 s without any face: stays on the first dot
+        now[0] += 0.07
+        cal.tick()
+    assert cal.phase in ("settle", "collect") and cal.index == 0
+    cal.finish(False)
+
+
+def test_dwell_indicator(qt):
+    from gestura.ui.widgets.dwell_indicator import DwellIndicator
+
+    d = DwellIndicator()
+    d.set_state(0.6, False)
+    assert d.isVisible() and d.progress == 0.6
+    d.grab()
+    d.set_state(0.0, True)
+    assert d.isVisible()
+    d.set_state(0.0, False)
+    assert not d.isVisible()
+    d.close()
+
+
+def test_studio_shows_eye_state(window):
+    w, app, _, _ = window
+    from gestura.services.tracking_service import Telemetry
+
+    w.show_page("studio")
+    t = _face_telemetry(0.5, 0.5)
+    t.face.left_open, t.face.right_open, t.face.activity, t.face.progress = 0.2, 1.0, "Left eye closed", 0.5
+    w.studio._on_telemetry(t)
+    assert "Face detected" in w.studio.eyes_title.text()
+    assert "Left eye closed" in w.studio.eyes_state.text()
+    w.studio._on_telemetry(Telemetry())
+    assert w.studio.eyes_title.text() == "No face in view"

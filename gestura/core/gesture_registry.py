@@ -41,6 +41,7 @@ _COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("mouse.scroll", "Scroll", "Mouse", continuous=True),
     CommandSpec("mouse.drag_start", "Drag (hold left button)", "Mouse"),
     CommandSpec("mouse.drag_end", "Drop (release left button)", "Mouse"),
+    CommandSpec("mouse.drag_toggle", "Drag on / drop (toggle left button)", "Mouse"),
     # View
     CommandSpec("view.zoom_in", "Zoom in (Ctrl + wheel)", "View"),
     CommandSpec("view.zoom_out", "Zoom out (Ctrl + wheel)", "View"),
@@ -79,6 +80,8 @@ _COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("app.toggle_pause", "Pause / resume Gestura", "Gestura", control=True),
     CommandSpec("app.emergency_stop", "Emergency stop", "Gestura", control=True),
     CommandSpec("app.toggle_keyboard", "Show / hide virtual keyboard", "Gestura", control=True),
+    CommandSpec("face.scroll_mode", "Scroll mode on / off (eyes & head)", "Gestura", control=True),
+    CommandSpec("face.recenter", "Re-centre the head pointer", "Gestura", control=True),
 )
 
 COMMANDS: dict[str, CommandSpec] = {c.id: c for c in _COMMANDS}

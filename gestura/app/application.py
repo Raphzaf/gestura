@@ -70,6 +70,8 @@ class GesturaApp(QObject):
             "app.toggle_pause": lambda: self.safety.toggle_pause("open palm"),
             "app.emergency_stop": lambda: self.safety.emergency_stop("emergency gesture"),
             "app.toggle_keyboard": self.keyboard_toggle_requested.emit,
+            "face.scroll_mode": lambda: self.tracking.face_command("scroll_mode"),
+            "face.recenter": lambda: self.tracking.face_command("recenter"),
         })
 
         self.tracking = TrackingService(self.settings, self.safety, self.commands, self.bus, source_spec)
@@ -131,7 +133,8 @@ class GesturaApp(QObject):
 
     # -------------------------------------------------------------- settings
     def _mapping(self) -> dict[str, str]:
-        return {**self.settings.mappings.hand, **self.settings.mappings.head}
+        m = self.settings.mappings
+        return {**m.hand, **m.head, **m.face}
 
     def update_settings(self, settings: Settings, save: bool = True) -> None:
         if settings.startup.launch_at_login != self.settings.startup.launch_at_login:

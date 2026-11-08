@@ -13,7 +13,8 @@ from __future__ import annotations
 import time
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea,
+                               QVBoxLayout, QWidget)
 
 from ...core.safety_manager import EngineState
 from ...services.tracking_service import CameraStatus, Telemetry
@@ -30,6 +31,7 @@ STATE_TEXT = {
 
 class DashboardPage(QWidget):
     calibrate_requested = Signal()
+    eye_calibrate_requested = Signal()
 
     def __init__(self, app, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -76,7 +78,7 @@ class DashboardPage(QWidget):
         grid.setSpacing(16)
         self.cam_card, self.cam_chip, self.cam_detail = self._status_card("Camera")
         self.hand_card, self.hand_chip, self.hand_detail = self._status_card("Hand tracking")
-        self.head_card, self.head_chip, self.head_detail = self._status_card("Head tracking")
+        self.head_card, self.head_chip, self.head_detail = self._status_card("Head & eyes")
         gcard = Card("Current gesture")
         self.gesture_label = label("—", "bigValue")
         self.gesture_detail = label("", "hint", wrap=True)
@@ -96,6 +98,11 @@ class DashboardPage(QWidget):
             "mouse": ToggleRow("Mouse mode", "Point to move, pinch to click (hold to drag), two fingers scroll, three fingers set the volume, two open hands zoom.", m.mouse),
             "navigation": ToggleRow("Navigation mode", "Turn head for back / forward, nod to confirm.", m.navigation),
             "keyboard": ToggleRow("Keyboard mode", "Floating on-screen keyboard; select keys with the hand cursor.", m.keyboard),
+            "face_mouse": ToggleRow(
+                "Hands-free mouse (eyes & head)",
+                "Point with your eyes and head. Wink left = click, wink right = right click, "
+                "long blink = double click. All eye actions: Settings › Gesture mapping.",
+                m.face_mouse),
         }
         for key, row in self.mode_rows.items():
             row.toggled.connect(lambda on, k=key: app.set_mode(k, on))
@@ -106,8 +113,37 @@ class DashboardPage(QWidget):
                     "and drag. Steadier clicks.", app.settings.hand.two_hand_mouse)
                 self.two_hand_row.toggled.connect(self._set_two_hand)
                 modes.body.addWidget(self.two_hand_row)
+            if key == "face_mouse":
+                opts = QHBoxLayout()
+                opts.setContentsMargins(0, 0, 0, 0)
+                self.pointer_combo = QComboBox()
+                for text, value in (("Eyes + head (recommended)", "hybrid"), ("Eyes only", "gaze"),
+                                    ("Head only", "head")):
+                    self.pointer_combo.addItem(text, value)
+                self.pointer_combo.setAccessibleName("Hands-free pointer")
+                self.pointer_combo.setCurrentIndex(max(0, self.pointer_combo.findData(app.settings.face.pointer)))
+                self.pointer_combo.currentIndexChanged.connect(self._set_pointer)
+                self.eye_calib_btn = QPushButton("Calibrate eyes…")
+                self.eye_calib_btn.clicked.connect(self.eye_calibrate_requested)
+                opts.addWidget(label("Pointer", "hint"))
+                opts.addWidget(self.pointer_combo, 1)
+                opts.addWidget(self.eye_calib_btn)
+                modes.body.addLayout(opts)
+                self.eye_status = label("", "hint", wrap=True)
+                modes.body.addWidget(self.eye_status)
+                self.dwell_row = ToggleRow("Dwell click", "Keep the pointer still for a moment to click "
+                                           "(for anyone who cannot wink).", app.settings.face.dwell_click)
+                self.dwell_row.toggled.connect(self._set_dwell)
+                modes.body.addWidget(self.dwell_row)
         modes.body.addStretch(1)
-        bottom.addWidget(modes, 1)
+        self._update_eye_status()
+        # The modes list is longer than small windows: scroll instead of squeezing rows.
+        modes_scroll = QScrollArea()
+        modes_scroll.setWidgetResizable(True)
+        modes_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        modes_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        modes_scroll.setWidget(modes)
+        bottom.addWidget(modes_scroll, 1)
         prev = Card("Live preview")
         self.preview = VideoView()
         self.preview.setMinimumSize(320, 200)
@@ -182,6 +218,34 @@ class DashboardPage(QWidget):
         for key, row in self.mode_rows.items():
             row.setChecked(getattr(s.modes, key))
         self.two_hand_row.setChecked(s.hand.two_hand_mouse)
+        self.dwell_row.setChecked(s.face.dwell_click)
+        idx = self.pointer_combo.findData(s.face.pointer)
+        if idx != self.pointer_combo.currentIndex():
+            self.pointer_combo.blockSignals(True)
+            self.pointer_combo.setCurrentIndex(max(0, idx))
+            self.pointer_combo.blockSignals(False)
+        self._update_eye_status()
+
+    def _update_eye_status(self) -> None:
+        f = self.app.settings.face
+        if f.pointer == "head":
+            text = "Head pointer: no calibration needed. Use Calibrate… (head) to set your neutral position."
+        elif f.gaze_model:
+            px = f.gaze_error * 1080
+            text = f"Eyes calibrated (about {px:.0f} px on a 1080p screen). Recalibrate if you move the webcam."
+        else:
+            text = "Eyes not calibrated yet: the head moves the pointer until you calibrate."
+        self.eye_status.setText(text)
+
+    def _set_pointer(self, _i: int) -> None:
+        s = self.app.settings.copy_deep()
+        s.face.pointer = self.pointer_combo.currentData()
+        self.app.update_settings(s)
+
+    def _set_dwell(self, on: bool) -> None:
+        s = self.app.settings.copy_deep()
+        s.face.dwell_click = on
+        self.app.update_settings(s)
 
     def _set_two_hand(self, on: bool) -> None:
         s = self.app.settings.copy_deep()
@@ -218,6 +282,13 @@ class DashboardPage(QWidget):
             else:
                 self.hand_chip.set("No hand in view", "lost" if self.app.settings.modes.mouse else "off")
                 self.hand_detail.setText("")
+        fs = t.face
+        if fs.visible and self.app.settings.modes.face_mouse:
+            eyes = ("closed" if fs.left_closed else "open", "closed" if fs.right_closed else "open")
+            extra = " · scroll mode" if fs.scroll_mode else ""
+            self.head_chip.set(f"Eyes {eyes[0]} / {eyes[1]}{extra}", "on")
+            self.head_detail.setText(fs.activity or f"Pointer: {fs.pointer}")
+            return
         hd = t.head
         if hd.visible:
             state = "Armed" if hd.armed else "Return to neutral"

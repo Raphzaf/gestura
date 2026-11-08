@@ -49,11 +49,11 @@ python store\build_store.py                         # MSIX à téléverser (Wind
 python store\build_store.py --sign                  # + copie signée pour tester sur ton PC
 python store\build_store.py --submit                # + envoi dans Partner Center (brouillon)
 python store\build_store.py --submit --commit       # + soumission à la certification
-python store\build_store.py --submit --package store\out\Gestura_0.3.0.0_x64.msix   # soumettre sans rebuild
+python store\build_store.py --submit --package store\out\Gestura_0.4.0.0_x64.msix   # soumettre sans rebuild
 ```
 
 Sortie : `store\out\Gestura_<version>.0_x64.msix`. La version vient de `pyproject.toml`
-(`0.3.0` → `0.3.0.0` ; le Store exige un dernier chiffre à 0). Code de sortie 2 =
+(`0.4.0` → `0.4.0.0` ; le Store exige un dernier chiffre à 0). Code de sortie 2 =
 configuration manquante ou invalide (le message liste les variables à renseigner).
 
 Prérequis Windows : Python 3.12 + `pip install -r requirements-dev.txt pyinstaller`,

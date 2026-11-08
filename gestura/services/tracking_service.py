@@ -37,6 +37,7 @@ from ..core.command_engine import CommandEngine, CommandRecord
 from ..core.event_bus import COMMAND_BLOCKED, COMMAND_EXECUTED, GESTURE, EventBus
 from ..core.safety_manager import SafetyManager
 from ..core.types import GestureEvent
+from ..gestures.face_gestures import FaceGestureEngine, FaceState
 from ..gestures.hand_gestures import HandGestureEngine, HandState
 from ..gestures.head_gestures import HeadGestureEngine, HeadState
 
@@ -53,6 +54,7 @@ class Telemetry:
     frame_size: tuple[int, int] = (0, 0)
     hand: HandState = field(default_factory=HandState)
     head: HeadState = field(default_factory=HeadState)
+    face: FaceState = field(default_factory=FaceState)
     face_visible: bool = False
     hands_visible: int = 0
 
@@ -99,8 +101,10 @@ class TrackingWorker(QThread):
         self.preview_enabled = True
         self.overlay_flags = {"hands": True, "face": True, "axes": True, "region": True}
         self.banner = ""
+        self.suspended = False  # e.g. eye calibration on screen: recognise, but run no command
         self.hand_engine = HandGestureEngine(settings.hand, settings.cursor, settings.tracking)
         self.head_engine = HeadGestureEngine(settings.head)
+        self.face_engine = FaceGestureEngine(settings.face, settings.head, settings.camera.mirror)
         self.processor = None
         self.frames_processed = 0
 
@@ -144,6 +148,7 @@ class TrackingWorker(QThread):
                     self.processor.configure(s.tracking, s.camera)
                     self.hand_engine.configure(s.hand, s.cursor, s.tracking)
                     self.head_engine.configure(s.head)
+                    self.face_engine.configure(s.face, s.head, s.camera.mirror)
                     if camera_changed and source is not None and self.source_spec is None:
                         source.release()
                         source = None
@@ -180,7 +185,8 @@ class TrackingWorker(QThread):
                 last_ok = captured
 
                 # Skip expensive face inference when nobody needs it.
-                need_face = s.tracking.face_enabled and (s.modes.navigation or self.preview_enabled)
+                need_face = s.tracking.face_enabled and (s.modes.navigation or s.modes.face_mouse
+                                                         or self.preview_enabled)
                 need_hands = s.tracking.hands_enabled and (s.modes.mouse or s.modes.keyboard or self.preview_enabled)
                 if (need_face, need_hands) != (self.processor.tracking.face_enabled, self.processor.tracking.hands_enabled):
                     t = s.tracking.model_copy(update={"face_enabled": need_face, "hands_enabled": need_hands})
@@ -191,11 +197,8 @@ class TrackingWorker(QThread):
 
                 hand_events = self.hand_engine.update(tf)
                 head_events = self.head_engine.update(tf)
-                dispatch_hand = s.modes.mouse or s.modes.keyboard
-                for ev in hand_events:
-                    self._dispatch(ev, dispatch_hand)
-                for ev in head_events:
-                    self._dispatch(ev, s.modes.navigation)
+                face_events = self.face_engine.update(tf)
+                self._dispatch_all(s, hand_events, head_events, face_events)
 
                 if last_t is not None:
                     inst = 1.0 / max(1e-3, captured - last_t)
@@ -212,6 +215,7 @@ class TrackingWorker(QThread):
                         control_hand=hs.hand_index, click_hand=hs.click_index, cursor=hs.cursor_frame,
                         pinch_active=hs.left_pinch == "closed" or hs.right_pinch == "closed",
                         banner=self.banner,
+                        eyes=self._eye_overlay(s) if of["face"] else None,
                     )
                     self._frame_pending = True
                     self.frame_ready.emit(to_qimage(annotate(display, tf, ov)))
@@ -222,7 +226,7 @@ class TrackingWorker(QThread):
                     self.telemetry.emit(Telemetry(
                         fps=fps, latency_ms=(now - captured) * 1000, hand_ms=tf.hand_ms, face_ms=tf.face_ms,
                         source=source.name, frame_size=(tf.width, tf.height),
-                        hand=self.hand_engine.state, head=self.head_engine.state,
+                        hand=self.hand_engine.state, head=self.head_engine.state, face=self.face_engine.state,
                         face_visible=tf.face is not None, hands_visible=len(tf.hands)))
         except Exception as exc:  # noqa: BLE001
             log.exception("tracking loop crashed")
@@ -235,16 +239,44 @@ class TrackingWorker(QThread):
                 self.processor.close()
             self.camera_status.emit(CameraStatus.OFF, "Camera off")
 
+    def _dispatch_all(self, s: Settings, hand_events: list[GestureEvent], head_events: list[GestureEvent],
+                      face_events: list[GestureEvent]) -> None:
+        dispatch_hand = s.modes.mouse or s.modes.keyboard
+        face_on = s.modes.face_mouse
+        for ev in hand_events:
+            self._dispatch(ev, dispatch_hand)
+        # When the head drives the pointer, head turns / nods must not also
+        # trigger back / forward / Enter.
+        head_free = not (face_on and self.face_engine.uses_head)
+        for ev in head_events:
+            self._dispatch(ev, s.modes.navigation and head_free)
+        # A hand that is actively controlling the mouse has priority over the face
+        # pointer; eye and face actions (winks…) stay available.
+        hand_busy = dispatch_hand and self.hand_engine.state.mode != "idle"
+        self.face_engine.state.paused_by_hand = face_on and hand_busy
+        for ev in face_events:
+            self._dispatch(ev, face_on and not (hand_busy and ev.continuous))
+
     def _dispatch(self, ev: GestureEvent, enabled: bool) -> None:
         if not ev.continuous:
             self.gesture.emit(ev)
             self.bus.publish(GESTURE, ev)
-        if enabled:
+        if enabled and not self.suspended:
             self.commands.handle(ev)
+
+    def _eye_overlay(self, s: Settings) -> tuple[bool, bool] | None:
+        """Closed state of the (image-left, image-right) eyes, for the preview."""
+        fs = self.face_engine.state
+        if not fs.visible:
+            return None
+        if s.camera.mirror:
+            return fs.left_closed, fs.right_closed
+        return fs.right_closed, fs.left_closed
 
     def _safe_reset(self) -> None:
         self.hand_engine.reset()
         self.head_engine.reset()
+        self.face_engine.reset()
 
 
 class TrackingService(QObject):
@@ -270,6 +302,7 @@ class TrackingService(QObject):
         self.status_message = "Camera off"
         self._preview = True
         self._overlay = {"hands": True, "face": True, "axes": True, "region": True}
+        self._suspended = False
         bus.subscribe(COMMAND_EXECUTED, self._on_command)
         bus.subscribe(COMMAND_BLOCKED, self._on_command)
 
@@ -286,6 +319,7 @@ class TrackingService(QObject):
         w = TrackingWorker(self.settings, self.commands, self.bus, self.source_spec)
         w.preview_enabled = self._preview
         w.overlay_flags = dict(self._overlay)
+        w.suspended = self._suspended
         w.frame_ready.connect(self._on_frame)
         w.telemetry.connect(self.telemetry)
         w.gesture.connect(self.gesture)
@@ -329,6 +363,22 @@ class TrackingService(QObject):
         self._overlay[key] = on
         if self.worker is not None:
             self.worker.overlay_flags[key] = on
+
+    def set_suspended(self, on: bool) -> None:
+        """Keep tracking (and telemetry) running but execute no command."""
+        self._suspended = on
+        if self.worker is not None:
+            self.worker.suspended = on
+
+    def face_command(self, name: str) -> None:
+        """Runs on the worker thread when triggered by a gesture (CommandEngine)."""
+        w = self.worker
+        if w is None:
+            return
+        if name == "scroll_mode":
+            w.face_engine.toggle_scroll_mode()
+        elif name == "recenter":
+            w.face_engine.recenter()
 
     def set_banner(self, text: str) -> None:
         if self.worker is not None:

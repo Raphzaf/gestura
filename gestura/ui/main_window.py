@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (QButtonGroup, QHBoxLayout, QMainWindow, QPushButt
                                QWidget)
 
 from .. import SOURCE_URL, __version__
+from . import theme
 from ..core.safety_manager import EngineState
 from .dashboard.dashboard_page import DashboardPage
 from .gesture_studio.studio_page import StudioPage
@@ -80,8 +81,9 @@ class MainWindow(QMainWindow):
         sv.addWidget(label("All video is processed locally.\nNo footage is stored or uploaded.", "privacy"))
         sv.addWidget(label(f"v{__version__}", "privacy"))
         # GPL v3: tell users where the source is (required wherever binaries are distributed).
-        about = label(f'Free software, <a href="{SOURCE_URL}/blob/main/LICENSE">GPL v3</a> · '
-                      f'<a href="{SOURCE_URL}">source code</a>', "privacy")
+        link = f'style="color: {theme.ACCENT}; text-decoration: none;"'
+        about = label(f'Free software, <a {link} href="{SOURCE_URL}/blob/main/LICENSE">GPL v3</a> · '
+                      f'<a {link} href="{SOURCE_URL}">source code</a>', "privacy")
         about.setOpenExternalLinks(True)
         sv.addWidget(about)
         h.addWidget(side)

@@ -1,7 +1,24 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
+* **Hands-free mouse (eyes & head)** — a new mode for people who cannot use their
+  hands, and for busy hands:
+  * **Eye tracking**: 25-second calibration (9 dots), then 4 check dots measure the
+    real accuracy, shown with advice. Head rotation is compensated.
+  * **Pointer**: eyes + head (eyes jump, head fine-tunes), eyes only, or head only
+    (no calibration needed).
+  * **Eye actions**: left wink = click, right wink = right click, long blink = double
+    click, long left wink = drag / drop, long right wink = re-centre, eyes closed 2 s =
+    pause, double blink (available). Natural blinks are ignored; each eye's open size
+    is learned automatically; the pointer freezes while an eye closes.
+  * **Face actions**: raise eyebrows = scroll mode; open mouth and smile available.
+  * **Dwell click** with a progress ring next to the pointer.
+  * Gesture Studio shows both eyes, mouth, smile and eyebrows; preview draws the eyes
+    (green open, orange closed) and irises. New *Eyes & face* settings tab; every
+    eye / face gesture is remappable.
+  * New commands: drag toggle, scroll mode, re-centre.
+* Dashboard: the modes list scrolls instead of squeezing on small windows.
 * Gestura is now licensed under the **GNU GPL v3 or later**: `LICENSE` file at the
   root, SPDX header in every source file (checked by a test and by
   `scripts/license_headers.py --check`), license shown by the installer and shipped

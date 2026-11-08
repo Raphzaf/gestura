@@ -8,5 +8,5 @@
 # WITHOUT ANY WARRANTY; see the LICENSE file at the project root for details.
 """Gestura — hands-free desktop control."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 SOURCE_URL = "https://github.com/Raphzaf/gestura"

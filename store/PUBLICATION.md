@@ -97,8 +97,8 @@ déjà les valeurs par défaut du workflow GitHub.
    *test_signed* coché, *submit* décoché) > **Run workflow**. Durée : 15 à 25 min.
 2. ☐ À la fin, ouvrir l'exécution et télécharger l'artefact **Gestura-msix** (en bas
    de la page), puis extraire le zip. Il contient :
-   - `Gestura_0.3.0.0_x64.msix` → **le fichier à envoyer au Store** (étape 6) ;
-   - `Gestura_0.3.0.0_x64_test-signed.msix` → la copie à installer sur ton PC ;
+   - `Gestura_0.4.0.0_x64.msix` → **le fichier à envoyer au Store** (étape 6) ;
+   - `Gestura_0.4.0.0_x64_test-signed.msix` → la copie à installer sur ton PC ;
    - `Gestura-test-certificate.cer` → le certificat de cette copie.
 3. ☐ Faire confiance au certificat de test (une fois par build) : clic droit sur
    **Démarrer** > **Terminal (administrateur)**, aller dans le dossier extrait, puis :
@@ -107,7 +107,7 @@ déjà les valeurs par défaut du workflow GitHub.
    ```
    (Ou : double-clic sur le `.cer` > *Installer le certificat* > *Ordinateur local* >
    *Placer tous les certificats dans le magasin suivant* > **Personnes autorisées**.)
-4. ☐ Double-clic sur `Gestura_0.3.0.0_x64_test-signed.msix` > **Installer**.
+4. ☐ Double-clic sur `Gestura_0.4.0.0_x64_test-signed.msix` > **Installer**.
 5. ☐ Faire les tests de la section 4.4 ci-dessous.
 
 La clé privée de ce certificat est détruite à la fin du build : personne ne peut
@@ -173,8 +173,8 @@ python store\build_store.py --sign
 ```
 
 Résultat dans `store\out\` :
-- `Gestura_0.3.0.0_x64.msix` → **le fichier à envoyer au Store** (non signé) ;
-- `Gestura_0.3.0.0_x64_test-signed.msix` → double-clic pour l'installer sur ton PC.
+- `Gestura_0.4.0.0_x64.msix` → **le fichier à envoyer au Store** (non signé) ;
+- `Gestura_0.4.0.0_x64_test-signed.msix` → double-clic pour l'installer sur ton PC.
 
 ### 4.4 Tests à faire sur la version installée
 
@@ -254,7 +254,7 @@ soumission d'application pour votre application MSIX », mise à jour en 2026.)
   achat dans l'application → classification attendue : **3+**
 
 ### Packages
-- ☐ **Package de l'application** (obligatoire) : envoyer `Gestura_0.3.0.0_x64.msix`
+- ☐ **Package de l'application** (obligatoire) : envoyer `Gestura_0.4.0.0_x64.msix`
   (**le non signé**, pas la copie `test-signed`)
 - ☐ **Disponibilité de la famille d'appareils** : **Windows 10/11 Desktop** uniquement
   (décocher Xbox, HoloLens, etc. s'ils sont proposés)

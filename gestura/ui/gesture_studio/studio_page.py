@@ -111,6 +111,23 @@ class StudioPage(QWidget):
         head.body.addWidget(self.head_state)
         side.addWidget(head)
 
+        eyes = Card("Eyes & face")
+        self.eyes_title = label("No face", "value", wrap=True)
+        self.eyes_state = label("", "hint", wrap=True)
+        eyes.body.addWidget(self.eyes_title)
+        fs = app.settings.face
+        self.m_left = Meter(0, 1.3, marks=(fs.eye_close_ratio, fs.eye_open_ratio))
+        self.m_right = Meter(0, 1.3, marks=(fs.eye_close_ratio, fs.eye_open_ratio))
+        self.m_mouth = Meter(0, 1, marks=(fs.mouth_open_ratio,))
+        self.m_smile = Meter(0.8, 1.6, marks=(fs.smile_ratio,))
+        self.m_brows = Meter(0.8, 1.8, marks=(fs.brow_raise_ratio,))
+        for title, meter in (("Left eye open", self.m_left), ("Right eye open", self.m_right),
+                             ("Mouth open", self.m_mouth), ("Smile", self.m_smile), ("Eyebrows", self.m_brows)):
+            eyes.body.addWidget(label(title, "hint"))
+            eyes.body.addWidget(meter)
+        eyes.body.addWidget(self.eyes_state)
+        side.addWidget(eyes)
+
         log_card = Card("Gesture log")
         self.log = QListWidget()
         self.log.setMinimumHeight(160)
@@ -155,6 +172,11 @@ class StudioPage(QWidget):
         self.m_yaw.marks = (-s.head.yaw_threshold_deg, s.head.yaw_threshold_deg)
         self.m_pitch.marks = (-s.head.pitch_up_threshold_deg, s.head.pitch_down_threshold_deg)
         self.m_roll.marks = (-s.head.roll_threshold_deg, s.head.roll_threshold_deg)
+        f = s.face
+        self.m_left.marks = self.m_right.marks = (f.eye_close_ratio, f.eye_open_ratio)
+        self.m_mouth.marks = (f.mouth_open_ratio,)
+        self.m_smile.marks = (f.smile_ratio,)
+        self.m_brows.marks = (f.brow_raise_ratio,)
 
     def _on_frame(self, img) -> None:
         if self.isVisible():
@@ -191,6 +213,7 @@ class StudioPage(QWidget):
             self.hand_pose.setText("")
             for m in (self.m_ti, self.m_tm, self.m_palm):
                 m.set(0)
+        self._update_eyes(t)
         hd = t.head
         if hd.visible:
             self.head_title.setText("Face detected · " + ("armed" if hd.armed else "waiting for neutral"))
@@ -208,9 +231,43 @@ class StudioPage(QWidget):
             for m in (self.m_yaw, self.m_pitch, self.m_roll):
                 m.set(0)
 
+    def _update_eyes(self, t: Telemetry) -> None:
+        fs = t.face
+        if not fs.visible:
+            self.eyes_title.setText("No face in view")
+            self.eyes_state.setText("")
+            for m in (self.m_left, self.m_right, self.m_mouth, self.m_smile, self.m_brows):
+                m.set(0)
+            return
+        pointer = {"head": "head pointer", "gaze": "eye pointer", "hybrid": "eyes + head pointer"}[fs.pointer]
+        if self.app.settings.face.pointer != "head" and not fs.calibrated:
+            pointer += " (eyes not calibrated yet)"
+        self.eyes_title.setText(f"Face detected · {pointer}")
+        self.m_left.set(fs.left_open, theme.WARN if fs.left_closed else theme.ACCENT)
+        self.m_right.set(fs.right_open, theme.WARN if fs.right_closed else theme.ACCENT)
+        self.m_mouth.set(fs.mouth, theme.ACCENT)
+        self.m_smile.set(fs.smile, theme.ACCENT)
+        self.m_brows.set(fs.brows, theme.ACCENT)
+        bits = []
+        if fs.activity:
+            bits.append(f"{fs.activity} ({fs.progress:.0%})")
+        if fs.scroll_mode:
+            bits.append("scroll mode")
+        if fs.frozen:
+            bits.append("pointer frozen")
+        if fs.dwell_progress > 0:
+            bits.append(f"dwell {fs.dwell_progress:.0%}")
+        if fs.paused_by_hand:
+            bits.append("hand has priority")
+        self.eyes_state.setText(" · ".join(bits) or "Eyes open")
+
     def _on_gesture(self, ev) -> None:
-        if self.app.settings.modes.mouse or self.app.settings.modes.keyboard or ev.name.startswith("head."):
-            return  # the command record (below) will describe it
+        m = self.app.settings.modes
+        if ev.name.startswith(("eye.", "face.")):
+            if m.face_mouse:
+                return  # the command record (below) will describe it
+        elif m.mouse or m.keyboard or ev.name.startswith("head."):
+            return
         self._add(f"{ev.label}  (mode off — not mapped)", theme.MUTED)
 
     def _on_command(self, rec) -> None:

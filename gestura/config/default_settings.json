@@ -79,6 +79,42 @@
     "neutral_roll": 0.0,
     "calibrated": false
   },
+  "face": {
+    "pointer": "hybrid",
+    "head_range_yaw_deg": 14.0,
+    "head_range_pitch_deg": 10.0,
+    "head_smoothing_min_cutoff": 0.8,
+    "head_smoothing_beta": 4.0,
+    "gaze_smoothing_min_cutoff": 0.35,
+    "gaze_smoothing_beta": 1.5,
+    "gaze_fixation_radius": 0.035,
+    "screen_half_angle_deg": 22.0,
+    "hybrid_jump_distance": 0.15,
+    "hybrid_jump_ms": 250,
+    "hybrid_head_gain": 0.6,
+    "eye_close_ratio": 0.55,
+    "eye_open_ratio": 0.75,
+    "wink_other_eye_ratio": 0.65,
+    "wink_min_ms": 150,
+    "long_wink_ms": 800,
+    "long_blink_ms": 600,
+    "double_blink_min_ms": 180,
+    "double_blink_window_ms": 700,
+    "eyes_closed_hold_ms": 2000,
+    "freeze_on_blink": true,
+    "mouth_open_ratio": 0.35,
+    "smile_ratio": 1.12,
+    "brow_raise_ratio": 1.18,
+    "expression_hold_ms": 300,
+    "action_cooldown_ms": 500,
+    "dwell_click": false,
+    "dwell_ms": 1000,
+    "dwell_radius": 0.025,
+    "scroll_speed": 15.0,
+    "scroll_dead_zone": 0.05,
+    "gaze_model": [],
+    "gaze_error": 0.0
+  },
   "safety": {
     "start_in_test_mode": true,
     "confirm_sensitive": true,
@@ -106,7 +142,8 @@
   "modes": {
     "mouse": true,
     "navigation": false,
-    "keyboard": false
+    "keyboard": false,
+    "face_mouse": false
   },
   "mappings": {
     "hand": {
@@ -133,6 +170,21 @@
       "head.tilt_up": "key.escape",
       "head.roll_left": "none",
       "head.roll_right": "none"
+    },
+    "face": {
+      "face.cursor": "mouse.move",
+      "face.scroll": "mouse.scroll",
+      "eye.wink_left": "mouse.left_click",
+      "eye.wink_right": "mouse.right_click",
+      "eye.long_wink_left": "mouse.drag_toggle",
+      "eye.long_wink_right": "face.recenter",
+      "eye.long_blink": "mouse.double_click",
+      "eye.double_blink": "none",
+      "eye.closed_hold": "app.toggle_pause",
+      "face.mouth_open": "none",
+      "face.smile": "none",
+      "face.brows_raised": "face.scroll_mode",
+      "face.dwell": "mouse.left_click"
     }
   }
 }

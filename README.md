@@ -8,7 +8,7 @@ locally; no video is stored or uploaded.
 Primary target: **Windows 10/11 (x64)**. Built with Python, PySide6, MediaPipe
 and OpenCV.
 
-> **Status: early (v0.3.0).** All six milestones are implemented and covered by
+> **Status: early (v0.4.0).** All six milestones are implemented and covered by
 > automated tests, including on Windows in CI, but the app has **not yet been used
 > with a live webcam by a real user**. See [What has been verified](#what-has-been-verified).
 
@@ -147,6 +147,19 @@ cursor stays exactly where you aimed when you click.
 | Tilt up | Escape |
 | Return to neutral | Re-arms head gestures |
 
+| Eyes & face (Hands-free mouse) | Action |
+|---|---|
+| Look / turn the head | Move the pointer (eyes jump, head fine-tunes) |
+| Left wink · right wink | Left click · right click |
+| Long blink (both eyes ≥ 0.6 s) | Double click |
+| Long left wink (≥ 0.8 s) | Drag on / drop |
+| Raise eyebrows | Scroll mode: tilt or look up / down to scroll |
+| Keep the pointer still 1 s (option) | Dwell click |
+| Close both eyes 2 s | Pause / resume |
+
+Natural blinks do nothing. Eye tracking needs a 25-second calibration (Dashboard ›
+*Calibrate eyes…*); the head pointer needs none. Details: [docs/GESTURES.md](docs/GESTURES.md#eyes--face-hands-free-mouse-mode).
+
 Everything is remappable (Settings › Gesture mapping) and every threshold is
 configurable. Media commands (volume, mute, play/pause, next/previous track) and window
 commands (maximize, minimize, show desktop, task view, snap) can be assigned to any
@@ -165,6 +178,10 @@ gesture — for example head tilts to change track or show the desktop. Details,
 * **Settings** — generated from the validated configuration model: camera,
   tracking, cursor, hand and head thresholds, cooldowns, safety, keyboard,
   overlay, startup (launch at login), gesture mapping.
+* **Hands-free mouse** — eye tracking (9-point calibration with a measured
+  accuracy), head pointer, or both (eyes jump, head refines); winks, long blinks,
+  eyebrows, mouth and smile as clicks and commands; dwell click with an on-screen
+  progress ring; scroll mode. For people who cannot use their hands.
 * **Calibration wizard** — camera position, face, neutral head pose with
   direction check, hand position, pinch thresholds, gesture test.
 * **Safety** — test mode by default, pause, emergency stop, confirmation for
@@ -202,6 +219,10 @@ the system-wide emergency hotkey, the keyboard's no-focus-steal behaviour
 * Thresholds were tuned on still photos and synthetic motion; expect to adjust
   them (or re-run calibration) after real use.
 * The packaged app is large (~590 MB unpacked): MediaPipe, OpenCV and Qt.
+* **Webcam eye tracking is coarse** (typically 100–250 px on a 1080p screen): use
+  the hybrid or head pointer for small targets. Wink and blink thresholds were tuned
+  on synthetic eye closures and still need tuning with real users; glasses with
+  strong reflections and dim light reduce reliability.
 
 ## Documentation
 
@@ -300,6 +321,17 @@ caméra*. Fermez les autres applications qui utilisent la caméra (Teams, Zoom, 
      suivante ; hochez la tête deux fois pour valider (Entrée).
    * **Mode clavier** (Keyboard mode) : affiche le clavier flottant (AZERTY par défaut) ;
      pointez une touche et pincez. Cliquez d'abord dans le champ où vous voulez écrire.
+   * **Souris sans les mains (yeux et tête)** (Hands-free mouse) : pour ceux qui ne
+     peuvent pas utiliser leurs mains. Le regard et la tête déplacent le pointeur
+     (choix : *yeux + tête* recommandé, *yeux seuls*, *tête seule*). **Clin d'œil
+     gauche** = clic, **clin d'œil droit** = clic droit, **clignement long** des deux
+     yeux (0,6 s) = double-clic, **clin d'œil gauche long** (0,8 s) = attraper / déposer,
+     **sourcils levés** = mode défilement (inclinez la tête vers le haut ou le bas),
+     **yeux fermés 2 s** = pause / reprise. Option **Dwell click** : gardez le pointeur
+     immobile 1 s pour cliquer (un anneau montre la progression). Les clignements
+     naturels ne déclenchent rien. Pour suivre le regard, faites une fois
+     **Calibrate eyes…** (25 s : suivez un point des yeux, sans rien cliquer) ; la
+     précision mesurée s'affiche à la fin.
 6. **Arrêter à tout moment** : bouton rouge **EMERGENCY STOP**, `Ctrl+Maj+G`,
    `Ctrl+Alt+Maj+G` depuis n'importe quelle application, la souris *physique* poussée
    dans un coin de l'écran, ou la paume ouverte maintenue (pause / reprise).

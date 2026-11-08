@@ -24,19 +24,21 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QMessageBox,
                                QPushButton, QScrollArea, QSpinBox, QTabWidget, QVBoxLayout, QWidget)
 
-from ...config.settings import HandGesture, HeadGesture, Settings
+from ...config.settings import FaceGesture, HandGesture, HeadGesture, Settings
 from ...core.gesture_registry import COMMANDS, continuous_commands, discrete_commands
 from ..widgets.common import label
 
 SECTIONS = [
     ("camera", "Camera"), ("tracking", "Tracking"), ("cursor", "Cursor"), ("hand", "Hand gestures"),
-    ("head", "Head gestures"), ("safety", "Safety"), ("keyboard", "Keyboard"), ("interface", "Interface"), ("startup", "Startup"),
+    ("head", "Head gestures"), ("face", "Eyes & face"), ("safety", "Safety"), ("keyboard", "Keyboard"), ("interface", "Interface"), ("startup", "Startup"),
 ]
 HIDDEN = {
     "head": {"neutral_yaw", "neutral_pitch", "neutral_roll", "calibrated"},
     "keyboard": {"pos_x", "pos_y"},
+    "face": {"gaze_model", "gaze_error"},
 }
-CONTINUOUS_GESTURES = {HandGesture.CURSOR.value, HandGesture.SCROLL.value}
+CONTINUOUS_GESTURES = {HandGesture.CURSOR.value, HandGesture.SCROLL.value,
+                       FaceGesture.CURSOR.value, FaceGesture.SCROLL.value}
 GESTURE_LABELS = {
     "hand.cursor": "Index finger extended", "hand.pinch": "Thumb + index pinch",
     "hand.middle_pinch": "Thumb + middle pinch", "hand.scroll": "Two fingers, move hand",
@@ -51,7 +53,21 @@ GESTURE_LABELS = {
     "head.turn_left": "Turn head left", "head.turn_right": "Turn head right",
     "head.nod_down": "Nod down", "head.tilt_up": "Tilt head up",
     "head.roll_left": "Tilt head to left shoulder", "head.roll_right": "Tilt head to right shoulder",
+    "face.cursor": "Eye / head pointer", "face.scroll": "Scroll mode: look / turn up-down",
+    "eye.wink_left": "Left wink", "eye.wink_right": "Right wink",
+    "eye.long_wink_left": "Long left wink", "eye.long_wink_right": "Long right wink",
+    "eye.long_blink": "Long blink (both eyes)", "eye.double_blink": "Double blink",
+    "eye.closed_hold": "Eyes closed 2 s", "face.mouth_open": "Open mouth", "face.smile": "Smile",
+    "face.brows_raised": "Raise eyebrows", "face.dwell": "Dwell (pointer kept still)",
 }
+
+
+def mapping_group(gesture: str) -> str:
+    if gesture.startswith("hand."):
+        return "hand"
+    if gesture.startswith("head."):
+        return "head"
+    return "face"
 
 
 def _bounds(field) -> tuple[float | None, float | None]:
@@ -171,7 +187,8 @@ class SettingsPage(QWidget):
         # Drag start/end work as a pair (press / release) and are not remappable.
         fixed = {HandGesture.DRAG_START.value, HandGesture.DRAG_END.value}
         hand = [g.value for g in HandGesture if g.value not in fixed]
-        for title, gestures in (("Hand", hand), ("Head", [g.value for g in HeadGesture])):
+        for title, gestures in (("Hand", hand), ("Head", [g.value for g in HeadGesture]),
+                                ("Eyes & face (hands-free mouse)", [g.value for g in FaceGesture])):
             form = QFormLayout()
             form.setVerticalSpacing(8)
             form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)
@@ -198,7 +215,7 @@ class SettingsPage(QWidget):
         try:
             for (section, name), w in self._widgets.items():
                 if section == "mapping":
-                    group = s.mappings.hand if name.startswith("hand.") else s.mappings.head
+                    group = getattr(s.mappings, mapping_group(name))
                     idx = w.findData(group.get(name, "none"))
                     w.setCurrentIndex(max(0, idx))
                     continue
@@ -245,7 +262,7 @@ class SettingsPage(QWidget):
         if self._loading:
             return
         cmd = self._widgets[("mapping", gesture)].currentData()
-        group = "hand" if gesture.startswith("hand.") else "head"
+        group = mapping_group(gesture)
         if cmd not in COMMANDS:
             return
         self._commit(lambda d: d["mappings"][group].__setitem__(gesture, cmd))

@@ -35,6 +35,7 @@ def register_executors(
     r("mouse.scroll", lambda e: mouse.scroll(e.data.get("dx", 0.0), e.data.get("dy", 0.0)))
     r("mouse.drag_start", lambda e: mouse.drag_start())
     r("mouse.drag_end", lambda e: mouse.drag_end())
+    r("mouse.drag_toggle", lambda e: mouse.drag_end() if mouse.dragging else mouse.drag_start())
 
     def zoom(direction: int) -> None:
         # Ctrl + wheel zooms in browsers, PDF/photo viewers, Office and maps on any keyboard layout.
