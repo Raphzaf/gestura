@@ -212,7 +212,9 @@ Résultat dans `store\out\` :
   noms de fichiers). Ton visage apparaît dans l'aperçu : cadre la caméra sur la main
   si tu préfères.
 - ☐ Facultatif : une **bande-annonce** (30 à 60 s) ; le film de lancement de
-  `promo/launch_film` peut servir de base.
+  `promo/launch_film` peut servir de base. Miniature 16:9 prête (FR et EN, 1920 × 1080
+  et 3840 × 2160) : `store/listing/art/trailer_thumbnail_*.png`
+  (`python scripts/trailer_thumbnail.py` pour la refaire).
 
 ## Étape 6 — Remplir la soumission dans Partner Center (1 h)
 
